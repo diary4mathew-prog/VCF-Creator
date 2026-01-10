@@ -3,154 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Contact Share Pro</title>
+    <title>Contact File Creator</title>
     <style>
-        :root { --primary: #007bff; --whatsapp: #25D366; --bg: #f0f2f5; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        
-        .mode-selector { display: flex; background: #ddd; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
-        .mode-btn { flex: 1; padding: 12px; text-align: center; border-radius: 10px; border: none; font-weight: bold; background: transparent; cursor: pointer; }
-        .mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
-        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; }
-        input, textarea { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        
-        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; color: white; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .blue { background: var(--primary); }
-        .green { background: var(--whatsapp); }
-        .gray { background: #6c757d; font-size: 14px; padding: 10px; }
-
-        .status { padding: 10px; border-radius: 8px; font-size: 14px; margin-bottom: 10px; display: none; text-align: center; }
-        .success { background: #d4edda; color: #155724; }
-        .hidden { display: none; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px; }
+        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 18px; border-radius: 12px; border: none; color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .purple { background: #6f42c1; }
+        .gray { background: #6c757d; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="mode-selector">
-    <button id="btnS" class="mode-btn active" onclick="switchMode('single')">Single Contact</button>
-    <button id="btnM" class="mode-btn" onclick="switchMode('multiple')">Batch Mode</button>
-</div>
-
-<div id="sectionSingle">
-    <div class="card">
-        <textarea id="rawInput" rows="2" placeholder="Paste message here..."></textarea>
-        <div style="display:flex; gap:10px;">
-            <button class="btn blue" onclick="autoParse()">Extract Info</button>
-            <button class="btn gray" onclick="clearAll()">Clear</button>
-        </div>
-    </div>
-
-    <div class="card">
-        <div id="statusMsg" class="status success"></div>
-        <input id="fName" placeholder="Full Name">
-        <input id="fPhone" placeholder="Phone Number" inputmode="tel">
-        <input id="fEmail" placeholder="Email (Optional)" inputmode="email">
-        <textarea id="fNotes" placeholder="Notes (Optional)"></textarea>
-
-        <button class="btn green" onclick="shareVCF()">
-            <span>📤</span> Share Contact Card (.vcf)
-        </button>
-        <button class="btn blue" style="background:#00a884" onclick="shareAsText()">
-            <span>💬</span> Share as Text & Link
-        </button>
-    </div>
-</div>
-
-<div id="sectionMulti" class="hidden">
-    <div class="card">
-        <textarea id="multiInput" rows="10" placeholder="Name Phone Note (One per line)"></textarea>
-        <button class="btn green" onclick="shareBatch()">Share All Contacts</button>
-    </div>
+<div class="card">
+    <h2 style="margin:0 0 15px 0;">New Contact</h2>
+    <input id="fName" placeholder="Full Name">
+    <input id="fPhone" placeholder="Phone Number" inputmode="tel">
+    <textarea id="fNotes" placeholder="Notes (Meeting info, etc.)" rows="3"></textarea>
+    
+    <button class="btn purple" onclick="handleFileShare()">📤 Save & Share File</button>
+    <button class="btn gray" onclick="location.reload()">Reset</button>
 </div>
 
 <script>
-    const el = (id) => document.getElementById(id);
+    async function handleFileShare() {
+        const name = document.getElementById('fName').value.trim() || "Contact";
+        const phone = document.getElementById('fPhone').value.trim();
+        const notes = document.getElementById('fNotes').value.trim();
 
-    function switchMode(m) {
-        el('sectionSingle').classList.toggle('hidden', m !== 'single');
-        el('sectionMulti').classList.toggle('hidden', m !== 'multiple');
-        el('btnS').classList.toggle('active', m === 'single');
-        el('btnM').classList.toggle('active', m === 'multiple');
-    }
+        if (!phone) { alert("Please enter a phone number"); return; }
 
-    function autoParse() {
-        const text = el('rawInput').value;
-        const phone = text.match(/(\+?\d[\d\s\-]{7,15})/);
-        if (phone) {
-            const pVal = phone[0].trim();
-            el('fPhone').value = pVal.replace(/[^\d+]/g, '');
-            el('fName').value = text.split(pVal)[0].trim() || "New Contact";
-            el('statusMsg').style.display = 'block';
-            el('statusMsg').innerText = "Extracted: " + el('fName').value;
-        }
-    }
+        // Proper VCF 3.0 Formatting
+        const vcfContent = [
+            'BEGIN:VCARD',
+            'VERSION:3.0',
+            `N:;${name};;;`,
+            `FN:${name}`,
+            `TEL;TYPE=CELL:${phone}`,
+            notes ? `NOTE:${notes.replace(/\n/g, ' ')}` : '',
+            'END:VCARD'
+        ].join('\n');
 
-    function clearAll() {
-        ['rawInput', 'fName', 'fPhone', 'fEmail', 'fNotes'].forEach(id => el(id).value = '');
-        el('statusMsg').style.display = 'none';
-    }
+        const fileName = `${name.replace(/\s+/g, '_')}.vcf`;
+        const file = new File([vcfContent], fileName, { type: 'text/vcard' });
 
-    function generateVCard(n, p, e, nt) {
-        return `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL;TYPE=CELL:${p}\nEMAIL:${e}\nNOTE:${nt}\nEND:VCARD`;
-    }
-
-    async function shareVCF() {
-        const name = el('fName').value || "Contact";
-        const vcfText = generateVCard(name, el('fPhone').value, el('fEmail').value, el('fNotes').value);
-        const file = new File([vcfText], `${name}.vcf`, { type: 'text/vcard' });
-
+        // Try Native Share First (Works on Chrome/Safari over HTTPS)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             try {
-                await navigator.share({ files: [file], title: name });
-            } catch (err) { downloadVCF(vcfText, name); }
-        } else {
-            downloadVCF(vcfText, name);
-        }
-    }
-
-    function shareAsText() {
-        const name = el('fName').value || "Contact";
-        const phone = el('fPhone').value;
-        const cleanPhone = phone.replace(/\D/g, '');
-        
-        // This format is a "vCard Lite" text format often recognized by mobile OS
-        const textMsg = `*Contact Info*\n👤 Name: ${name}\n📞 Phone: ${phone}\n\nTap to Chat:\nhttps://wa.me/${cleanPhone}`;
-
-        if (navigator.share) {
-            navigator.share({ title: name, text: textMsg }).catch(() => {
-                window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`);
-            });
-        } else {
-            window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`);
-        }
-    }
-
-    async function shareBatch() {
-        const lines = el('multiInput').value.split('\n').filter(l => l.trim());
-        let batchContent = "";
-        lines.forEach(line => {
-            const p = line.match(/(\+?\d[\d\s\-]{7,})/);
-            if (p) {
-                const n = line.split(p[0])[0].trim() || "Contact";
-                batchContent += generateVCard(n, p[0].replace(/[^\d+]/g, ''), '', '') + "\n";
+                await navigator.share({
+                    files: [file],
+                    title: name
+                });
+            } catch (err) {
+                downloadFallback(vcfContent, fileName);
             }
-        });
-        const file = new File([batchContent], "contacts.vcf", { type: 'text/vcard' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file] });
         } else {
-            downloadVCF(batchContent, "contacts");
+            downloadFallback(vcfContent, fileName);
         }
     }
 
-    function downloadVCF(content, name) {
+    function downloadFallback(content, name) {
         const blob = new Blob([content], { type: 'text/vcard' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = `${name}.vcf`;
+        a.download = name;
         a.click();
-        alert("Share not supported. File downloaded instead.");
+        alert("Sharing blocked by browser. File downloaded instead. Now attach this file in your chat.");
     }
 </script>
 </body>
