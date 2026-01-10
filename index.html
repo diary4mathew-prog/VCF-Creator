@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro VCF Contact Creator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); [cite: 2]
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto; [cite: 4]
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12); [cite: 5]
+        }
+        h2 { color: #2c3e50; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; } [cite: 6]
+        textarea {
+            width: 100%; height: 120px; margin-bottom: 15px; padding: 12px;
+            border: 2px solid #e0e0e0; border-radius: 6px; box-sizing: border-box; [cite: 7]
+            transition: border-color 0.3s;
+        }
+        textarea:focus { border-color: #007bff; outline: none; } [cite: 9]
+        .drop-zone {
+            border: 2px dashed #007bff;
+            padding: 20px;
+            text-align: center;
+            color: #007bff;
+            background: #f0f7ff;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            border: 2px solid #e0e0e0; border-radius: 6px; box-sizing: border-box; [cite: 10]
+        }
+        button {
+            background-color: #007bff; color: white; border: none; padding: 14px 20px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.3s; [cite: 13, 14]
+        }
+        button:hover { background-color: #0056b3; transform: translateY(-2px); } [cite: 15]
+        .button-green { background-color: #28a745; }
+        .button-orange { background-color: #fd7e14; }
+        .button-purple { background-color: #6f42c1; }
+        .button-group { display: flex; gap: 10px; margin-top: 15px; } [cite: 35]
+        .button-group button { flex: 1; } [cite: 36]
+        .preview-box {
+            margin-top: 20px; padding: 15px; background: #f8f9fa;
+            border-radius: 6px; border-left: 4px solid #007bff; display: none; [cite: 25, 26]
+        }
+        .status-message { padding: 10px; border-radius: 6px; margin: 10px 0; display: none; } [cite: 31]
+        .success { background-color: #d4edda; color: #155724; border-left: 4px solid #28a745; } [cite: 32]
+        .error { background-color: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; } [cite: 33]
+        .advanced-fields { display: none; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 6px; } [cite: 37]
+        .history-list { max-height: 250px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px; } [cite: 43]
+        .history-item { padding: 10px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; } [cite: 45, 46]
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📇 Pro VCF Contact Creator</h2>
+   
+    <div id="dropZone" class="drop-zone">
+        Drag & Drop a .txt or .csv file here to batch process
+    </div>
+
+    <div class="section-title">Step 1: Input Information</div>
+    <textarea id="rawInput" placeholder="John Doe 9876543210 john@email.com"></textarea>
+   
+    <div class="button-group">
+        <button onclick="splitText()" class="button-green">Parse Text</button>
+        <button onclick="batchProcess()" class="button-purple">Batch Process Lines</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Step 2: Review Details</div>
+    <input type="text" id="name" placeholder="Full Name" oninput="updatePreview()"> [cite: 57]
+    <input type="text" id="phone" placeholder="Phone Number" oninput="updatePreview()">
+    <input type="email" id="email" placeholder="Email Address" oninput="updatePreview()">
+    <input type="text" id="notes" placeholder="Notes/Description" oninput="updatePreview()"> [cite: 57]
+   
+    <button class="toggle-advanced" onclick="toggleAdvanced()" style="background:none; color:#007bff; border:none; cursor:pointer;">▼ Show Advanced Fields</button> [cite: 38, 39]
+   
+    <div class="advanced-fields" id="advancedFields">
+        <input type="text" id="company" placeholder="Company Name" oninput="updatePreview()"> [cite: 57, 58]
+        <input type="text" id="title" placeholder="Job Title" oninput="updatePreview()">
+        <input type="url" id="website" placeholder="https://example.com" oninput="updatePreview()">
+        <input type="text" id="address" placeholder="Address" oninput="updatePreview()">
+    </div>
+
+    <div class="preview-box" id="preview">
+        <h4>📱 Preview:</h4>
+        <div id="previewContent" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div> [cite: 28]
+    </div>
+
+    <div class="status-message" id="statusMessage"></div> [cite: 59]
+
+    <div class="button-group">
+        <button onclick="downloadVCF()" class="button-green">Download VCF</button> [cite: 60]
+        <button onclick="downloadAllVCF()" class="button-orange">Download History (Bulk)</button>
+        <button onclick="showQRCode()" class="button-purple">Show QR Code</button>
+    </div>
+
+    <div id="qrcodeContainer" style="margin-top: 20px; text-align: center; display: none;">
+        <div id="qrcode"></div>
+        <button onclick="hideQRCode()">Close</button>
+    </div>
+
+    <div class="history-section" style="margin-top:30px; border-top:2px solid #f0f0f0;"> [cite: 61]
+        <h3>Recent Contacts</h3>
+        <div class="history-list" id="historyList"></div> [cite: 61]
+        <button onclick="clearHistory()" style="background:#dc3545; margin-top:10px;">Clear History</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', loadHistory);
+
+    // Drag and Drop Logic
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.background = '#e1efff'; });
+    dropZone.addEventListener('dragleave', () => { dropZone.style.background = '#f0f7ff'; });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            document.getElementById('rawInput').value = event.target.result;
+            batchProcess();
+        };
+        reader.readAsText(file);
+    });
+
+    function splitText() {
+        const raw = document.getElementById('rawInput').value.trim();
+        if (!raw) return showStatus('Please enter text.', 'warning'); [cite: 63, 64]
+
+        const phoneMatch = raw.match(/\+?[\d\s\-\(\)]{10,}/); [cite: 64]
+        if (phoneMatch) {
+            const phone = phoneMatch[0];
+            const cleanPhone = phone.replace(/[\s\-\(\)]/g, ''); [cite: 67]
+            const emailMatch = raw.match(/[\w._%+-]+@[\w.-]+\.[a-zA-Z]{2,}/); [cite: 69]
+            
+            document.getElementById('phone').value = cleanPhone;
+            document.getElementById('name').value = raw.split(phone)[0].trim(); [cite: 69, 73]
+            document.getElementById('email').value = emailMatch ? emailMatch[0] : ''; [cite: 70]
+            updatePreview();
+            showStatus('Parsed!', 'success');
+        } else {
+            showStatus('No phone number found.', 'error'); [cite: 74]
+        }
+    }
+
+    function createVCF(data) {
+        // Updated to VCF 4.0 for better modern support
+        return `BEGIN:VCARD
+VERSION:4.0
+FN:${data.name || 'Contact'}
+TEL;TYPE=cell:${data.phone || ''}
+${data.email ? `EMAIL:${data.email}` : ''}
+${data.company ? `ORG:${data.company}` : ''}
+${data.title ? `TITLE:${data.title}` : ''}
+${data.notes ? `NOTE:${data.notes}` : ''}
+${data.website ? `URL:${data.website}` : ''}
+${data.address ? `ADR:;;${data.address}` : ''}
+REV:${new Date().toISOString().replace(/[-:]/g, '')}
+END:VCARD`; [cite: 94, 96]
+    }
+
+    function batchProcess() {
+        const lines = document.getElementById('rawInput').value.split('\n').filter(l => l.trim()); [cite: 77]
+        if (lines.length === 0) return;
+        
+        const contacts = [];
+        lines.forEach(line => {
+            const phoneMatch = line.match(/\+?\d[\d\s\-]{8,}/);
+            if (phoneMatch) {
+                const name = line.split(phoneMatch[0])[0].trim() || "Bulk Contact";
+                const contact = { name, phone: phoneMatch[0].replace(/\D/g, ''), timestamp: new Date().toISOString() };
+                contacts.push(createVCF(contact));
+                saveToHistory(contact); [cite: 83]
+            }
+        });
+
+        if (contacts.length > 0) {
+            const blob = new Blob([contacts.join('\n')], { type: 'text/vcard' }); [cite: 87]
+            downloadBlob(blob, "batch_contacts.vcf"); [cite: 88]
+            loadHistory();
+        }
+    }
+
+    function downloadVCF() {
+        const contact = {
+            name: document.getElementById('name').value,
+            phone: document.getElementById('phone').value.replace(/\D/g, ''), [cite: 97]
+            email: document.getElementById('email').value,
+            company: document.getElementById('company').value,
+            notes: document.getElementById('notes').value,
+            title: document.getElementById('title').value,
+            website: document.getElementById('website').value,
+            address: document.getElementById('address').value
+        };
+
+        if (!contact.name || !contact.phone) return showStatus('Name and Phone required.', 'error'); [cite: 147]
+
+        const vcf = createVCF(contact);
+        const blob = new Blob([vcf], { type: 'text/vcard' }); [cite: 102]
+        downloadBlob(blob, `${contact.name.replace(/\s/g, '_')}.vcf`); [cite: 102]
+        saveToHistory({...contact, timestamp: new Date().toISOString()}); [cite: 103]
+        loadHistory();
+    }
+
+    function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob); [cite: 108]
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); [cite: 109]
+        document.body.removeChild(a);
+    }
+
+    function saveToHistory(contact) {
+        const history = JSON.parse(localStorage.getItem('vcfHistory') || '[]'); [cite: 129]
+        if (!history.some(h => h.phone === contact.phone)) {
+            history.unshift(contact);
+            localStorage.setItem('vcfHistory', JSON.stringify(history.slice(0, 20))); [cite: 132]
+        }
+    }
+
+    function loadHistory() {
+        const history = JSON.parse(localStorage.getItem('vcfHistory') || '[]'); [cite: 133]
+        const list = document.getElementById('historyList');
+        list.innerHTML = history.length ? '' : '<p style="padding:10px">No recent contacts</p>'; [cite: 134]
+        history.forEach((c, i) => {
+            list.innerHTML += `
+                <div class="history-item">
+                    <div><strong>${c.name}</strong><br><small>${c.phone}</small></div>
+                    <button onclick="loadFromHistory(${i})" style="padding:5px 10px; font-size:12px">Load</button>
+                </div>`; [cite: 136, 137]
+        });
+    }
+
+    function loadFromHistory(index) {
+        const c = JSON.parse(localStorage.getItem('vcfHistory'))[index]; [cite: 139, 140]
+        document.getElementById('name').value = c.name || '';
+        document.getElementById('phone').value = c.phone || '';
+        document.getElementById('email').value = c.email || '';
+        document.getElementById('notes').value = c.notes || '';
+        document.getElementById('company').value = c.company || '';
+        updatePreview();
+    }
+
+    function updatePreview() {
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+        const box = document.getElementById('preview');
+        if (name || phone) {
+            box.style.display = 'block';
+            document.getElementById('previewContent').innerHTML = `
+                <div><strong>Name:</strong> ${name}</div>
+                <div><strong>Phone:</strong> ${phone}</div>`; [cite: 114, 116]
+        } else { box.style.display = 'none'; }
+    }
+
+    function toggleAdvanced() {
+        const div = document.getElementById('advancedFields');
+        const isHidden = div.style.display !== 'block';
+        div.style.display = isHidden ? 'block' : 'none'; [cite: 127]
+        document.querySelector('.toggle-advanced').innerText = isHidden ? '▲ Hide Advanced' : '▼ Show Advanced'; [cite: 128, 129]
+    }
+
+    function showStatus(msg, type) {
+        const s = document.getElementById('statusMessage');
+        s.innerHTML = msg; s.className = `status-message ${type}`; [cite: 153, 154]
+        s.style.display = 'block';
+        if (type === 'success') setTimeout(() => s.style.display = 'none', 3000); [cite: 155]
+    }
+
+    function showQRCode() {
+        const contact = { name: document.getElementById('name').value, phone: document.getElementById('phone').value };
+        if (!contact.name || !contact.phone) return showStatus('Enter Name/Phone', 'error'); [cite: 119]
+        
+        document.getElementById('qrcodeContainer').style.display = 'block'; [cite: 121]
+        QRCode.toCanvas(createVCF(contact), { width: 200 }, (err, canvas) => {
+            const qrDiv = document.getElementById('qrcode');
+            qrDiv.innerHTML = ''; qrDiv.appendChild(canvas); [cite: 123]
+        });
+    }
+
+    function hideQRCode() { document.getElementById('qrcodeContainer').style.display = 'none'; } [cite: 125]
+    function clearHistory() { localStorage.removeItem('vcfHistory'); loadHistory(); } [cite: 146, 147]
+</script>
+</body>
+</html>
