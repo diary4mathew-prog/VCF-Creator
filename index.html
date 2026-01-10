@@ -3,61 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VCF Creator Mobile</title>
+    <title>VCF Share Pro</title>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --bg: #f4f7f9; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        :root { --primary: #007bff; --share-green: #25D366; --bg: #f0f2f5; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
         
-        /* Large Touch-Friendly Toggle */
-        .mode-selector { 
-            display: flex; 
-            background: #ddd; 
-            border-radius: 10px; 
-            padding: 4px; 
-            margin-bottom: 20px;
-        }
-        .mode-btn { 
-            flex: 1; 
-            padding: 12px; 
-            text-align: center; 
-            border-radius: 8px; 
-            border: none; 
-            font-weight: bold; 
-            cursor: pointer;
-            background: transparent;
-            transition: 0.2s;
-        }
-        .mode-btn.active { background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); color: var(--primary); }
+        .mode-selector { display: flex; background: #e0e0e0; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+        .mode-btn { flex: 1; padding: 14px; text-align: center; border-radius: 10px; border: none; font-weight: 700; background: transparent; cursor: pointer; }
+        .mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
-        .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        input, textarea { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
         
-        /* Large Inputs for Fingers */
-        input, textarea { 
-            width: 100%; 
-            padding: 15px; 
-            margin: 8px 0; 
-            border: 1px solid #ccc; 
-            border-radius: 10px; 
-            font-size: 16px; /* Prevents iOS auto-zoom */
-            box-sizing: border-box;
-        }
-
-        .btn-main { 
-            width: 100%; 
-            padding: 16px; 
-            border-radius: 12px; 
-            border: none; 
-            color: white; 
-            font-size: 18px; 
-            font-weight: 600; 
-            margin-top: 10px;
-        }
-        
+        .btn-action { width: 100%; padding: 18px; border-radius: 12px; border: none; color: white; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .blue { background: var(--primary); }
-        .green { background: var(--success); }
-        .secondary { background: #6c757d; font-size: 14px; padding: 10px; }
+        .green { background: var(--share-green); }
+        .secondary { background: #6e7881; font-size: 14px; padding: 10px; margin-top: 5px; }
 
-        .preview { background: #f9f9f9; border-left: 5px solid var(--primary); padding: 10px; margin: 15px 0; font-size: 14px; border-radius: 5px; }
+        .preview-box { background: #f8f9fa; border: 1px dashed var(--primary); padding: 12px; border-radius: 10px; margin-top: 10px; font-size: 14px; color: #444; }
         .hidden { display: none; }
     </style>
 </head>
@@ -65,35 +28,36 @@
 
 <div class="mode-selector">
     <button id="btnSingle" class="mode-btn active" onclick="switchMode('single')">Single Contact</button>
-    <button id="btnMulti" class="mode-btn" onclick="switchMode('multiple')">Batch Mode</button>
+    <button id="btnMulti" class="mode-btn" onclick="switchMode('multiple')">Batch Share</button>
 </div>
 
 <div id="sectionSingle">
     <div class="card">
-        <textarea id="rawInput" rows="3" placeholder="Paste message here..."></textarea>
-        <div style="display:flex; gap:10px;">
-            <button class="btn-main blue" onclick="autoParse()">⚡ Auto-Parse</button>
-            <button class="btn-main secondary" onclick="clearAll()">Clear</button>
-        </div>
+        <textarea id="rawInput" rows="2" placeholder="Paste text/msg here..."></textarea>
+        <button class="btn-action blue" onclick="autoParse()">Extract Info</button>
+        <button class="btn-action secondary" onclick="clearAll()">Clear Fields</button>
     </div>
 
     <div class="card">
-        <input id="fName" placeholder="Name">
+        <input id="fName" placeholder="Full Name">
         <input id="fPhone" placeholder="Phone Number" inputmode="tel">
-        <input id="fEmail" placeholder="Email" inputmode="email">
-        <textarea id="fNotes" placeholder="Notes"></textarea>
+        <input id="fEmail" placeholder="Email (Optional)" inputmode="email">
+        <textarea id="fNotes" placeholder="Notes (Optional)"></textarea>
         
-        <div id="miniPreview" class="preview hidden"></div>
-        <button class="btn-main green" onclick="downloadVcf()">Save to Contacts</button>
+        <div id="statusMsg" class="preview-box hidden"></div>
+        <button class="btn-action green" onclick="handleShare()">
+            <span>📤</span> Share to WhatsApp / Contacts
+        </button>
     </div>
 </div>
 
 <div id="sectionMulti" class="hidden">
     <div class="card">
         <h3>Batch List</h3>
-        <p style="color:#666; font-size:12px;">Paste many lines: Name Phone Note</p>
-        <textarea id="multiInput" rows="10" placeholder="John 9876543210&#10;Jane 9123456780"></textarea>
-        <button class="btn-main blue" onclick="downloadBatch()">Download All (.vcf)</button>
+        <textarea id="multiInput" rows="8" placeholder="Paste multiple lines here..."></textarea>
+        <button class="btn-action green" onclick="handleShare(true)">
+            <span>📤</span> Share All as One File
+        </button>
     </div>
 </div>
 
@@ -116,50 +80,69 @@
             document.getElementById('fName').value = text.split(phoneVal)[0].trim() || "New Contact";
             document.getElementById('fEmail').value = email ? email[0] : '';
             
-            const prev = document.getElementById('miniPreview');
-            prev.classList.remove('hidden');
-            prev.innerText = `Ready to save: ${document.getElementById('fName').value}`;
+            const status = document.getElementById('statusMsg');
+            status.classList.remove('hidden');
+            status.innerText = `✅ Found: ${document.getElementById('fName').value}`;
         }
     }
 
     function clearAll() {
         ['rawInput', 'fName', 'fPhone', 'fEmail', 'fNotes'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('miniPreview').classList.add('hidden');
+        document.getElementById('statusMsg').classList.add('hidden');
     }
 
     function createVCard(n, p, e, nt) {
         return `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL;TYPE=CELL:${p}\nEMAIL:${e}\nNOTE:${nt}\nEND:VCARD\n`;
     }
 
-    function downloadVcf() {
-        const vcf = createVCard(
-            document.getElementById('fName').value,
-            document.getElementById('fPhone').value,
-            document.getElementById('fEmail').value,
-            document.getElementById('fNotes').value
-        );
-        const blob = new Blob([vcf], { type: 'text/vcard' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'contact.vcf';
-        a.click();
-    }
+    async function handleShare(isBatch = false) {
+        let vcfContent = "";
+        let fileName = "contact.vcf";
 
-    function downloadBatch() {
-        const lines = document.getElementById('multiInput').value.split('\n');
-        let batchVcf = "";
-        lines.forEach(line => {
-            const p = line.match(/(\+?\d[\d\s\-]{7,})/);
-            if (p) {
-                const name = line.split(p[0])[0].trim() || "Contact";
-                batchVcf += createVCard(name, p[0].replace(/[^\d+]/g, ''), '', '');
+        if (isBatch) {
+            const lines = document.getElementById('multiInput').value.split('\n');
+            lines.forEach(line => {
+                const p = line.match(/(\+?\d[\d\s\-]{7,})/);
+                if (p) {
+                    const name = line.split(p[0])[0].trim() || "Contact";
+                    vcfContent += createVCard(name, p[0].replace(/[^\d+]/g, ''), '', '');
+                }
+            });
+            fileName = "batch_contacts.vcf";
+        } else {
+            const name = document.getElementById('fName').value || "Contact";
+            vcfContent = createVCard(
+                name,
+                document.getElementById('fPhone').value,
+                document.getElementById('fEmail').value,
+                document.getElementById('fNotes').value
+            );
+            fileName = `${name.replace(/\s+/g, '_')}.vcf`;
+        }
+
+        if (!vcfContent) { alert("Please enter contact details first."); return; }
+
+        const file = new File([vcfContent], fileName, { type: 'text/vcard' });
+
+        // Check if the browser supports the Share API for files
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Contact File',
+                    text: 'Sharing contact info'
+                });
+            } catch (err) {
+                if (err.name !== 'AbortError') console.error("Share failed:", err);
             }
-        });
-        const blob = new Blob([batchVcf], { type: 'text/vcard' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'contacts.vcf';
-        a.click();
+        } else {
+            // Fallback for browsers that don't support sharing files
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(file);
+            a.download = fileName;
+            a.click();
+            alert("Share not supported on this browser. File downloaded instead.");
+        }
     }
 </script>
 </body>
