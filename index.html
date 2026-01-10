@@ -3,147 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VCF Share Pro</title>
+    <title>VCF Mobile Sharer</title>
     <style>
-        :root { --primary: #007bff; --share-green: #25D366; --bg: #f0f2f5; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        
-        .mode-selector { display: flex; background: #e0e0e0; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
-        .mode-btn { flex: 1; padding: 14px; text-align: center; border-radius: 10px; border: none; font-weight: 700; background: transparent; cursor: pointer; }
-        .mode-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        :root {
+            --primary: #007bff;
+            --whatsapp: #25D366;
+            --bg: #f4f7f9;
+            --card-bg: #ffffff;
+        }
 
-        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 15px; }
-        input, textarea { width: 100%; padding: 15px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        
-        .btn-action { width: 100%; padding: 18px; border-radius: 12px; border: none; color: white; font-size: 18px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .blue { background: var(--primary); }
-        .green { background: var(--share-green); }
-        .secondary { background: #6e7881; font-size: 14px; padding: 10px; margin-top: 5px; }
+        body {
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
 
-        .preview-box { background: #f8f9fa; border: 1px dashed var(--primary); padding: 12px; border-radius: 10px; margin-top: 10px; font-size: 14px; color: #444; }
+        /* Thumb-friendly Mode Switcher */
+        .mode-selector {
+            display: flex;
+            background: #e2e8f0;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 14px;
+            text-align: center;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            background: transparent;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+        .mode-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+
+        h2 { margin-top: 0; font-size: 18px; color: #1a202c; }
+
+        textarea, input {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: 1px solid #cbd5e0;
+            border-radius: 10px;
+            font-size: 16px; /* Prevents auto-zoom on iOS */
+            box-sizing: border-box;
+            background: #fafafa;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-parse { background: var(--primary); color: white; }
+        .btn-share { background: var(--whatsapp); color: white; }
+        .btn-clear { background: #718096; color: white; font-size: 14px; padding: 10px; }
+
+        .status-pill {
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            display: inline-block;
+            margin-bottom: 10px;
+            display: none;
+        }
+        .success { background: #c6f6d5; color: #22543d; }
+
         .hidden { display: none; }
+
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: #a0aec0;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
 
 <div class="mode-selector">
     <button id="btnSingle" class="mode-btn active" onclick="switchMode('single')">Single Contact</button>
-    <button id="btnMulti" class="mode-btn" onclick="switchMode('multiple')">Batch Share</button>
+    <button id="btnMulti" class="mode-btn" onclick="switchMode('multiple')">Batch Mode</button>
 </div>
 
 <div id="sectionSingle">
     <div class="card">
-        <textarea id="rawInput" rows="2" placeholder="Paste text/msg here..."></textarea>
-        <button class="btn-action blue" onclick="autoParse()">Extract Info</button>
-        <button class="btn-action secondary" onclick="clearAll()">Clear Fields</button>
+        <h2>Paste Message</h2>
+        <textarea id="rawInput" rows="3" placeholder="Paste text containing name & phone..."></textarea>
+        <button class="btn btn-parse" onclick="autoParse()">⚡ Extract Information</button>
+        <button class="btn btn-clear" onclick="clearFields()">Clear All</button>
     </div>
 
     <div class="card">
+        <h2>Contact Details</h2>
+        <div id="status" class="status-pill success">Contact Ready!</div>
+        
         <input id="fName" placeholder="Full Name">
         <input id="fPhone" placeholder="Phone Number" inputmode="tel">
         <input id="fEmail" placeholder="Email (Optional)" inputmode="email">
         <textarea id="fNotes" placeholder="Notes (Optional)"></textarea>
-        
-        <div id="statusMsg" class="preview-box hidden"></div>
-        <button class="btn-action green" onclick="handleShare()">
-            <span>📤</span> Share to WhatsApp / Contacts
+
+        <button class="btn btn-share" onclick="handleShare('file')">
+            <span>📄</span> Share VCF File
+        </button>
+        <button class="btn btn-share" style="background:#00a884" onclick="handleShare('text')">
+            <span>💬</span> Share as Text
         </button>
     </div>
 </div>
 
 <div id="sectionMulti" class="hidden">
     <div class="card">
-        <h3>Batch List</h3>
-        <textarea id="multiInput" rows="8" placeholder="Paste multiple lines here..."></textarea>
-        <button class="btn-action green" onclick="handleShare(true)">
-            <span>📤</span> Share All as One File
+        <h2>Batch Processing</h2>
+        <p style="font-size: 13px; color: #666;">One contact per line: Name Phone Note</p>
+        <textarea id="multiInput" rows="10" placeholder="John Doe 9876543210&#10;Jane Smith 9988776655 Important"></textarea>
+        <button class="btn btn-share" onclick="handleShare('batch')">
+            <span>📦</span> Share Combined VCF
         </button>
     </div>
 </div>
 
+<div class="footer-note">Use HTTPS for full sharing capabilities.</div>
+
 <script>
+    const el = (id) => document.getElementById(id);
+
     function switchMode(m) {
-        document.getElementById('sectionSingle').classList.toggle('hidden', m !== 'single');
-        document.getElementById('sectionMulti').classList.toggle('hidden', m !== 'multiple');
-        document.getElementById('btnSingle').classList.toggle('active', m === 'single');
-        document.getElementById('btnMulti').classList.toggle('active', m === 'multiple');
+        el('sectionSingle').classList.toggle('hidden', m !== 'single');
+        el('sectionMulti').classList.toggle('hidden', m !== 'multiple');
+        el('btnSingle').classList.toggle('active', m === 'single');
+        el('btnMulti').classList.toggle('active', m === 'multiple');
     }
 
     function autoParse() {
-        const text = document.getElementById('rawInput').value;
-        const phone = text.match(/(\+?\d[\d\s\-]{7,})/);
-        const email = text.match(/[\w.-]+@[\w.-]+\.[a-z]{2,}/);
-        
-        if (phone) {
-            const phoneVal = phone[0].trim();
-            document.getElementById('fPhone').value = phoneVal.replace(/[^\d+]/g, '');
-            document.getElementById('fName').value = text.split(phoneVal)[0].trim() || "New Contact";
-            document.getElementById('fEmail').value = email ? email[0] : '';
+        const text = el('rawInput').value;
+        const phoneMatch = text.match(/(\+?\d[\d\s\-]{7,15})/);
+        const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+
+        if (phoneMatch) {
+            const p = phoneMatch[0].trim();
+            el('fPhone').value = p.replace(/[^\d+]/g, '');
+            el('fName').value = text.split(p)[0].trim() || "New Contact";
+            el('fEmail').value = emailMatch ? emailMatch[0] : '';
             
-            const status = document.getElementById('statusMsg');
-            status.classList.remove('hidden');
-            status.innerText = `✅ Found: ${document.getElementById('fName').value}`;
+            el('status').style.display = 'inline-block';
+            el('status').innerText = "✅ Extracted: " + el('fName').value;
+        } else {
+            alert("No phone number found in text.");
         }
     }
 
-    function clearAll() {
-        ['rawInput', 'fName', 'fPhone', 'fEmail', 'fNotes'].forEach(id => document.getElementById(id).value = '');
-        document.getElementById('statusMsg').classList.add('hidden');
+    function clearFields() {
+        ['rawInput', 'fName', 'fPhone', 'fEmail', 'fNotes'].forEach(id => el(id).value = '');
+        el('status').style.display = 'none';
     }
 
     function createVCard(n, p, e, nt) {
         return `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL;TYPE=CELL:${p}\nEMAIL:${e}\nNOTE:${nt}\nEND:VCARD\n`;
     }
 
-    async function handleShare(isBatch = false) {
+    async function handleShare(type) {
+        const name = el('fName').value || "Contact";
+        const phone = el('fPhone').value;
+        const email = el('fEmail').value;
+        const notes = el('fNotes').value;
+
+        if (!phone && type !== 'batch') {
+            alert("Please enter a phone number.");
+            return;
+        }
+
         let vcfContent = "";
         let fileName = "contact.vcf";
 
-        if (isBatch) {
-            const lines = document.getElementById('multiInput').value.split('\n');
+        if (type === 'batch') {
+            const lines = el('multiInput').value.split('\n').filter(l => l.trim());
             lines.forEach(line => {
                 const p = line.match(/(\+?\d[\d\s\-]{7,})/);
                 if (p) {
-                    const name = line.split(p[0])[0].trim() || "Contact";
-                    vcfContent += createVCard(name, p[0].replace(/[^\d+]/g, ''), '', '');
+                    const n = line.split(p[0])[0].trim() || "Contact";
+                    vcfContent += createVCard(n, p[0].replace(/[^\d+]/g, ''), '', '');
                 }
             });
             fileName = "batch_contacts.vcf";
         } else {
-            const name = document.getElementById('fName').value || "Contact";
-            vcfContent = createVCard(
-                name,
-                document.getElementById('fPhone').value,
-                document.getElementById('fEmail').value,
-                document.getElementById('fNotes').value
-            );
+            vcfContent = createVCard(name, phone, email, notes);
             fileName = `${name.replace(/\s+/g, '_')}.vcf`;
         }
 
-        if (!vcfContent) { alert("Please enter contact details first."); return; }
+        // --- OPTION 1: SHARE AS TEXT ---
+        if (type === 'text') {
+            const textMsg = `Name: ${name}\nPhone: ${phone}${email ? '\nEmail: ' + email : ''}`;
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: name, text: textMsg });
+                } catch (e) {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`);
+                }
+            } else {
+                window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`);
+            }
+            return;
+        }
 
+        // --- OPTION 2: SHARE AS VCF FILE ---
         const file = new File([vcfContent], fileName, { type: 'text/vcard' });
-
-        // Check if the browser supports the Share API for files
+        
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             try {
                 await navigator.share({
                     files: [file],
-                    title: 'Contact File',
-                    text: 'Sharing contact info'
+                    title: 'Contact Card',
                 });
             } catch (err) {
-                if (err.name !== 'AbortError') console.error("Share failed:", err);
+                if (err.name !== 'AbortError') fallbackDownload(vcfContent, fileName);
             }
         } else {
-            // Fallback for browsers that don't support sharing files
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(file);
-            a.download = fileName;
-            a.click();
-            alert("Share not supported on this browser. File downloaded instead.");
+            fallbackDownload(vcfContent, fileName);
         }
     }
+
+    function fallbackDownload(content, name) {
+        const blob = new Blob([content], { type: 'text/vcard' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        alert("Native sharing not supported. File downloaded to your device.");
+    }
 </script>
+
 </body>
 </html>
