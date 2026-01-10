@@ -3,72 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Contact File Creator</title>
+    <title>Quick Contact Parser</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px; }
-        .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        input, textarea { width: 100%; padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 18px; border-radius: 12px; border: none; color: white; font-size: 18px; font-weight: bold; cursor: pointer; }
-        .purple { background: #6f42c1; }
-        .gray { background: #6c757d; margin-top: 10px; }
+        :root { --primary: #007bff; --wa: #25D366; --bg: #f4f7f6; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .tab { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #ddd; font-weight: bold; }
+        .tab.active { background: var(--primary); color: white; }
+        .card { background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        textarea, input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 15px; }
+        .blue { background: var(--primary); }
+        .green { background: var(--wa); }
+        .orange { background: #fd7e14; }
+        .gray { background: #6c757d; }
+        .label { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; margin-top: 10px; display: block; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2 style="margin:0 0 15px 0;">New Contact</h2>
-    <input id="fName" placeholder="Full Name">
-    <input id="fPhone" placeholder="Phone Number" inputmode="tel">
-    <textarea id="fNotes" placeholder="Notes (Meeting info, etc.)" rows="3"></textarea>
-    
-    <button class="btn purple" onclick="handleFileShare()">📤 Save & Share File</button>
-    <button class="btn gray" onclick="location.reload()">Reset</button>
+<div class="tabs">
+    <button id="t1" class="tab active" onclick="setMode('s')">SINGLE</button>
+    <button id="t2" class="tab" onclick="setMode('m')">MULTI</button>
+</div>
+
+<div id="single">
+    <div class="card">
+        <textarea id="sIn" rows="3" placeholder="Paste Lens text here..."></textarea>
+        <div style="display:flex; gap:10px;">
+            <button class="btn blue" onclick="doParse()">1. Parse</button>
+            <button class="btn gray" onclick="doClear()">Clear</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <input id="fN" placeholder="Name">
+        <input id="fP" placeholder="Phone" inputmode="tel">
+        <textarea id="fT" placeholder="Notes"></textarea>
+
+        <span class="label">Step 2: Copy & Use</span>
+        <button class="btn green" onclick="copyWA()">Copy wa.me Link</button>
+        <button class="btn orange" onclick="copyVCF()">Copy vCard (For Contacts)</button>
+    </div>
+</div>
+
+<div id="multi" class="hidden">
+    <div class="card">
+        <textarea id="mIn" rows="10" placeholder="One contact per line..."></textarea>
+        <button class="btn blue" onclick="copyMultiVCF()">Copy Batch vCard Text</button>
+        <button class="btn gray" onclick="doClear()">Clear List</button>
+    </div>
 </div>
 
 <script>
-    async function handleFileShare() {
-        const name = document.getElementById('fName').value.trim() || "Contact";
-        const phone = document.getElementById('fPhone').value.trim();
-        const notes = document.getElementById('fNotes').value.trim();
+    function setMode(m) {
+        document.getElementById('single').className = m === 's' ? '' : 'hidden';
+        document.getElementById('multi').className = m === 'm' ? '' : 'hidden';
+        document.getElementById('t1').className = m === 's' ? 'tab active' : 'tab';
+        document.getElementById('t2').className = m === 'm' ? 'tab active' : 'tab';
+    }
 
-        if (!phone) { alert("Please enter a phone number"); return; }
-
-        // Proper VCF 3.0 Formatting
-        const vcfContent = [
-            'BEGIN:VCARD',
-            'VERSION:3.0',
-            `N:;${name};;;`,
-            `FN:${name}`,
-            `TEL;TYPE=CELL:${phone}`,
-            notes ? `NOTE:${notes.replace(/\n/g, ' ')}` : '',
-            'END:VCARD'
-        ].join('\n');
-
-        const fileName = `${name.replace(/\s+/g, '_')}.vcf`;
-        const file = new File([vcfContent], fileName, { type: 'text/vcard' });
-
-        // Try Native Share First (Works on Chrome/Safari over HTTPS)
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: name
-                });
-            } catch (err) {
-                downloadFallback(vcfContent, fileName);
-            }
-        } else {
-            downloadFallback(vcfContent, fileName);
+    function doParse() {
+        const txt = document.getElementById('sIn').value;
+        const pMatch = txt.match(/(\+?\d[\d\s\-]{7,15})/);
+        if(pMatch) {
+            const p = pMatch[0].trim();
+            document.getElementById('fP').value = p.replace(/[^\d+]/g, '');
+            document.getElementById('fN').value = txt.split(p)[0].trim() || "New Contact";
+            document.getElementById('fT').value = txt.replace(document.getElementById('fN').value, '').replace(p, '').trim();
         }
     }
 
-    function downloadFallback(content, name) {
-        const blob = new Blob([content], { type: 'text/vcard' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = name;
-        a.click();
-        alert("Sharing blocked by browser. File downloaded instead. Now attach this file in your chat.");
+    function copyWA() {
+        const p = document.getElementById('fP').value.replace(/\D/g, '');
+        if(!p) return alert("No number");
+        navigator.clipboard.writeText(`https://wa.me/${p}`).then(() => alert("wa.me Link Copied"));
+    }
+
+    function copyVCF() {
+        const n = document.getElementById('fN').value || "Contact";
+        const p = document.getElementById('fP').value;
+        const nt = document.getElementById('fT').value;
+        const v = `BEGIN:VCARD\nVERSION:3.0\nN:;${n};;;\nFN:${n}\nTEL;TYPE=CELL:${p}\nNOTE:${nt}\nEND:VCARD`;
+        navigator.clipboard.writeText(v).then(() => alert("vCard Text Copied"));
+    }
+
+    function copyMultiVCF() {
+        const lines = document.getElementById('mIn').value.split('\n');
+        let res = "";
+        lines.forEach(l => {
+            const p = l.match(/(\+?\d[\d\s\-]{7,})/);
+            if(p) {
+                const n = l.split(p[0])[0].trim() || "Contact";
+                res += `BEGIN:VCARD\nVERSION:3.0\nN:;${n};;;\nFN:${n}\nTEL;TYPE=CELL:${p[0].replace(/\D/g,'')}\nEND:VCARD\n`;
+            }
+        });
+        navigator.clipboard.writeText(res).then(() => alert("Batch Copied"));
+    }
+
+    function doClear() {
+        const ids = ['sIn', 'fN', 'fP', 'fT', 'mIn'];
+        ids.forEach(i => document.getElementById(i).value = '');
     }
 </script>
 </body>
