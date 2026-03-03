@@ -1,296 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Direct Contact Saver</title>
-
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto}
-body{
-background:linear-gradient(135deg,#00b09b,#96c93d);
-min-height:100vh;
-display:flex;
-align-items:center;
-justify-content:center;
-padding:15px;
-}
-.container{width:100%;max-width:500px}
-.card{
-background:#fff;
-border-radius:25px;
-padding:25px;
-box-shadow:0 25px 50px -12px rgba(0,0,0,.25)
-}
-h1{text-align:center;margin-bottom:10px}
-.sub{text-align:center;font-size:14px;color:#64748b;margin-bottom:15px}
-.device{background:#f1f5f9;padding:6px 14px;border-radius:20px;text-align:center;margin-bottom:20px;font-size:13px}
-
-.input-group{margin-bottom:15px}
-input{
-width:100%;
-padding:14px;
-border:2px solid #e2e8f0;
-border-radius:14px;
-font-size:16px;
-}
-input:focus{outline:none;border-color:#25D366}
-
-.country-selector{
-display:flex;
-flex-wrap:wrap;
-gap:6px;
-margin:10px 0 15px;
-}
-.country-btn{
-padding:6px 10px;
-border-radius:20px;
-border:2px solid #e2e8f0;
-background:#fff;
-cursor:pointer;
-font-size:13px;
-}
-.country-btn.active{
-background:#25D366;
-color:#fff;
-border-color:#25D366;
-}
-
-.buttons{display:flex;gap:8px;margin:15px 0}
-button{
-flex:1;
-padding:14px;
-border:none;
-border-radius:14px;
-cursor:pointer;
-font-weight:600;
-transition: transform 0.1s;
-}
-button:active{transform: scale(0.98);}
-.whatsapp{background:#25D366;color:#fff}
-.save{background:#4f46e5;color:#fff}
-.clear{background:#f1f5f9}
-
-.result{
-display:none;
-background:#f8fafc;
-padding:15px;
-border-radius:16px;
-margin-top:15px;
-border:2px solid #e2e8f0
-}
-.option{
-background:#fff;
-border:2px solid #e2e8f0;
-padding:12px;
-border-radius:12px;
-margin-top:8px;
-cursor:pointer;
-}
-.option:hover{
-border-color:#4f46e5;
-background:#f5f3ff;
-}
-
-.toast{
-position:fixed;
-bottom:20px;
-left:50%;
-transform:translateX(-50%);
-background:#1e293b;
-color:#fff;
-padding:10px 20px;
-border-radius:30px;
-font-size:14px;
-z-index: 1000;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Saver Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+        body{background:#f0f2f5;display:flex;justify-content:center;padding:20px}
+        .card{background:#fff;padding:20px;border-radius:20px;width:100%;max-width:400px;box-shadow:0 10px 25px rgba(0,0,0,0.1)}
+        h1{text-align:center;font-size:22px;margin-bottom:20px}
+        input{width:100%;padding:12px;margin-bottom:10px;border:2px solid #ddd;border-radius:10px;font-size:16px}
+        .btns{display:flex;gap:10px;margin-bottom:20px}
+        button{flex:1;padding:15px;border:none;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer}
+        .wa{background:#25D366}.save{background:#4f46e5}.clear{background:#64748b}
+        #qrcode-container{display:none;text-align:center;margin-top:20px;padding:15px;background:#f9f9f9;border-radius:15px}
+        #qrcode{display:inline-block;margin-top:10px}
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:14px}
+    </style>
 </head>
-
 <body>
-<div class="container">
+
 <div class="card">
+    <h1>📱 Contact Saver</h1>
+    <input id="name" type="text" placeholder="Name">
+    <input id="phone" type="tel" placeholder="Phone Number (e.g. 9876543210)">
+    
+    <div class="btns">
+        <button class="wa" onclick="app.whatsapp()">WhatsApp</button>
+        <button class="save" onclick="app.save()">Save Contact</button>
+        <button class="clear" onclick="app.clear()">🗑</button>
+    </div>
 
-<h1>📱 Contact Saver</h1>
-<div class="sub">Save contact + open WhatsApp instantly</div>
-<div id="device" class="device">Detecting device...</div>
-
-<div class="input-group">
-<input id="name" placeholder="Contact Name" autocomplete="off">
-</div>
-
-<div class="input-group">
-<input id="phone" type="tel" placeholder="Phone Number" autocomplete="off">
-</div>
-
-<div class="country-selector">
-<button class="country-btn active" data-code="91">🇮🇳 +91</button>
-<button class="country-btn" data-code="1">🇺🇸 +1</button>
-<button class="country-btn" data-code="44">🇬🇧 +44</button>
-<button class="country-btn" data-code="61">🇦🇺 +61</button>
-</div>
-
-<div class="buttons">
-<button class="whatsapp" id="waBtn">WhatsApp</button>
-<button class="save" id="saveBtn">Save</button>
-<button class="clear" id="clearBtn">🗑</button>
-</div>
-
-<div id="result" class="result">
-<div id="preview" style="text-align: center; margin-bottom: 10px;"></div>
-<div id="options"></div>
-</div>
-
-</div>
+    <div id="qrcode-container">
+        <p style="font-size:12px; color:#666">If download fails, scan this:</p>
+        <div id="qrcode"></div>
+    </div>
 </div>
 
 <script>
-class App {
-    constructor() {
-        this.phoneInput = document.getElementById("phone");
-        this.nameInput = document.getElementById("name");
-        this.result = document.getElementById("result");
-        this.preview = document.getElementById("preview");
-        this.options = document.getElementById("options");
-        this.country = "91";
-        this.deviceInfo = document.getElementById("device");
-        this.os = "Unknown";
+const app = {
+    name: () => document.getElementById('name').value,
+    phone: () => document.getElementById('phone').value.replace(/\D/g, ''),
+    
+    whatsapp() {
+        if(!this.phone()) return this.toast("Enter number");
+        window.open(`https://wa.me/91${this.phone()}`, '_blank');
+    },
 
-        this.init();
-    }
+    save() {
+        const n = this.name() || "New Contact";
+        const p = this.phone();
+        if(!p) return this.toast("Enter number");
+        const fullP = p.length <= 10 ? "91" + p : p;
 
-    init() {
-        this.detectDevice();
-
-        document.querySelectorAll(".country-btn").forEach(btn => {
-            btn.addEventListener("click", () => {
-                document.querySelectorAll(".country-btn").forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                this.country = btn.dataset.code;
-            });
-        });
-
-        document.getElementById("waBtn").onclick = () => this.openWhatsApp();
-        document.getElementById("saveBtn").onclick = () => this.prepareContact();
-        document.getElementById("clearBtn").onclick = () => this.clear();
-    }
-
-    detectDevice() {
-        const ua = navigator.userAgent;
-        if (/Android/i.test(ua)) this.os = "Android";
-        else if (/iPhone|iPad|iPod/i.test(ua)) this.os = "iOS";
-        else if (/Windows/i.test(ua)) this.os = "Windows";
-        else if (/Mac/i.test(ua)) this.os = "Mac";
-        this.deviceInfo.textContent = "Detected: " + this.os;
-    }
-
-    validate() {
-        let raw = this.phoneInput.value.replace(/\D/g, "");
-        if (raw.length < 8) return null;
-        if (raw.length <= 10) raw = this.country + raw;
-        return raw;
-    }
-
-    openWhatsApp() {
-        const number = this.validate();
-        if (!number) return this.toast("Invalid number");
-        window.open(`https://wa.me/${number}`, "_blank");
-    }
-
-    prepareContact() {
-        const number = this.validate();
-        if (!number) return this.toast("Invalid number");
-
-        const name = this.nameInput.value.trim() || "Contact " + number.slice(-4);
-        this.preview.innerHTML = `<b>${name}</b><br>+${number}`;
-        this.result.style.display = "block";
-        this.showOptions(number, name);
-    }
-
-    showOptions(number, name) {
-        this.options.innerHTML = "";
-
-        // Android Direct Save Option
-        if (this.os === "Android") {
-            const android = document.createElement("div");
-            android.className = "option";
-            android.innerHTML = "🤖 Android Direct Save";
-            android.onclick = () => this.androidIntent(number, name);
-            this.options.appendChild(android);
-        }
-
-        // Standard vCard Option (Reliable fallback)
-        const vcard = document.createElement("div");
-        vcard.className = "option";
-        vcard.innerHTML = "📇 Download vCard (Recommended)";
-        vcard.onclick = () => this.downloadVCard(number, name);
-        this.options.appendChild(vcard);
-    }
-
-    androidIntent(number, name) {
-        const encodedName = encodeURIComponent(name);
-        const encodedPhone = encodeURIComponent("+" + number);
+        // 1. Try Android Intent (Single line, no spaces)
+        const intent = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${encodeURIComponent(n)};S.phone=${encodeURIComponent('+'+fullP)};end`;
         
-        // Correct single-line intent string for Chrome/Android
-        const intent = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${encodedName};S.phone=${encodedPhone};end`;
+        try {
+            window.location.href = intent;
+        } catch(e) {}
 
-        this.toast("Opening Contacts...");
-        
-        // Use window.location.replace to prevent browser history issues
-        window.location.href = intent;
-
-        // Auto-fallback to download if the intent fails to resolve in 1.5 seconds
+        // 2. Trigger vCard Download after a short delay
         setTimeout(() => {
-            if (document.hasFocus()) {
-                this.toast("Direct save failed, downloading vCard...");
-                this.downloadVCard(number, name);
-            }
-        }, 1500);
-    }
+            this.downloadVCF(n, fullP);
+            this.showQR(n, fullP);
+        }, 500);
+    },
 
-    downloadVCard(number, name) {
-        const vcardContent = [
-            "BEGIN:VCARD",
-            "VERSION:3.0",
-            `FN:${name}`,
-            `TEL;TYPE=CELL:+${number}`,
-            "END:VCARD"
-        ].join("\n");
-
-        const fileName = name.replace(/[^\w]/gi, "_") + ".vcf";
-        const link = document.createElement("a");
+    downloadVCF(n, p) {
+        const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL;TYPE=CELL:+${p}\nEND:VCARD`;
+        const blob = new Blob([vcf], { type: 'text/vcard' });
+        const url = window.URL.createObjectURL(blob);
         
-        // Data URI is more reliable for mobile downloads of small text files
-        link.setAttribute("href", "data:text/vcard;charset=utf-8," + encodeURIComponent(vcardContent));
-        link.setAttribute("download", fileName);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${n.replace(/\s+/g, '_')}.vcf`;
+        document.body.appendChild(a);
+        a.click();
         
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        this.toast("Attempting download...");
+        setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+    },
 
-        this.toast("vCard downloaded");
-    }
+    showQR(n, p) {
+        const qrContainer = document.getElementById('qrcode-container');
+        const qrDiv = document.getElementById('qrcode');
+        qrDiv.innerHTML = "";
+        qrContainer.style.display = "block";
+        
+        const vcardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL:+${p}\nEND:VCARD`;
+        new QRCode(qrDiv, {
+            text: vcardData,
+            width: 150,
+            height: 150
+        });
+    },
 
     clear() {
-        this.phoneInput.value = "";
-        this.nameInput.value = "";
-        this.result.style.display = "none";
-        this.toast("Cleared");
-    }
+        document.getElementById('name').value = "";
+        document.getElementById('phone').value = "";
+        document.getElementById('qrcode-container').style.display = "none";
+    },
 
     toast(msg) {
-        const existing = document.querySelector(".toast");
-        if (existing) existing.remove();
-        
         const t = document.createElement("div");
         t.className = "toast";
-        t.textContent = msg;
+        t.innerText = msg;
         document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2500);
+        setTimeout(() => t.remove(), 2000);
     }
-}
-
-document.addEventListener("DOMContentLoaded", () => new App());
+};
 </script>
 </body>
 </html>
