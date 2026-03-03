@@ -3,114 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Saver Pro</title>
+    <title>WhatsApp & QR Contact</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
-        body{background:#f0f2f5;display:flex;justify-content:center;padding:20px}
-        .card{background:#fff;padding:20px;border-radius:20px;width:100%;max-width:400px;box-shadow:0 10px 25px rgba(0,0,0,0.1)}
-        h1{text-align:center;font-size:22px;margin-bottom:20px}
-        input{width:100%;padding:12px;margin-bottom:10px;border:2px solid #ddd;border-radius:10px;font-size:16px}
-        .btns{display:flex;gap:10px;margin-bottom:20px}
-        button{flex:1;padding:15px;border:none;border-radius:10px;color:#fff;font-weight:bold;cursor:pointer}
-        .wa{background:#25D366}.save{background:#4f46e5}.clear{background:#64748b}
-        #qrcode-container{display:none;text-align:center;margin-top:20px;padding:15px;background:#f9f9f9;border-radius:15px}
-        #qrcode{display:inline-block;margin-top:10px}
-        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:14px}
+        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif}
+        body{background:#e5ddd5;display:flex;justify-content:center;padding:20px;min-height:100vh}
+        .card{background:#fff;padding:25px;border-radius:20px;width:100%;max-width:380px;box-shadow:0 10px 30px rgba(0,0,0,0.1);height:fit-content}
+        h2{text-align:center;color:#075e54;margin-bottom:20px;font-size:20px}
+        
+        .input-box{margin-bottom:15px}
+        label{display:block;font-size:12px;color:#666;margin-bottom:5px;margin-left:5px}
+        input{width:100%;padding:15px;border:1.5px solid #eee;border-radius:12px;font-size:16px;background:#f9f9f9}
+        input:focus{outline:none;border-color:#25D366;background:#fff}
+
+        .btn-group{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+        button{width:100%;padding:15px;border:none;border-radius:12px;font-weight:700;cursor:pointer;transition:0.2s}
+        .btn-wa{background:#25D366;color:white}
+        .btn-qr{background:#128C7E;color:white}
+        button:active{transform:scale(0.98)}
+
+        #qr-result{
+            display:none;
+            margin-top:25px;
+            text-align:center;
+            padding-top:20px;
+            border-top:1px dashed #ccc;
+        }
+        #qrcode{display:inline-block;padding:10px;background:#fff;border:1px solid #eee}
+        .instruction{font-size:12px;color:#777;margin-top:10px;line-height:1.4}
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1>📱 Contact Saver</h1>
-    <input id="name" type="text" placeholder="Name">
-    <input id="phone" type="tel" placeholder="Phone Number (e.g. 9876543210)">
+    <h2>Connect Instantly</h2>
     
-    <div class="btns">
-        <button class="wa" onclick="app.whatsapp()">WhatsApp</button>
-        <button class="save" onclick="app.save()">Save Contact</button>
-        <button class="clear" onclick="app.clear()">🗑</button>
+    <div class="input-box">
+        <label>Name</label>
+        <input id="name" type="text" placeholder="e.g. John Doe">
     </div>
 
-    <div id="qrcode-container">
-        <p style="font-size:12px; color:#666">If download fails, scan this:</p>
+    <div class="input-box">
+        <label>Phone (with country code)</label>
+        <input id="phone" type="tel" placeholder="e.g. 919876543210">
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-wa" onclick="actions.openWA()">Message on WhatsApp</button>
+        <button class="btn-qr" onclick="actions.generateQR()">Generate Contact QR</button>
+    </div>
+
+    <div id="qr-result">
         <div id="qrcode"></div>
+        <p class="instruction">
+            <strong>How to save:</strong><br>
+            1. Take a screenshot.<br>
+            2. Open with <b>Google Lens</b> or Photos.<br>
+            3. Tap "Add Contact".
+        </p>
     </div>
 </div>
 
 <script>
-const app = {
-    name: () => document.getElementById('name').value,
-    phone: () => document.getElementById('phone').value.replace(/\D/g, ''),
-    
-    whatsapp() {
-        if(!this.phone()) return this.toast("Enter number");
-        window.open(`https://wa.me/91${this.phone()}`, '_blank');
+const actions = {
+    getName: () => document.getElementById('name').value.trim(),
+    getPhone: () => document.getElementById('phone').value.replace(/\D/g, ''),
+
+    openWA() {
+        const p = this.getPhone();
+        if(!p) return alert("Please enter a phone number");
+        window.open(`https://wa.me/${p}`, '_blank');
     },
 
-    save() {
-        const n = this.name() || "New Contact";
-        const p = this.phone();
-        if(!p) return this.toast("Enter number");
-        const fullP = p.length <= 10 ? "91" + p : p;
-
-        // 1. Try Android Intent (Single line, no spaces)
-        const intent = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${encodeURIComponent(n)};S.phone=${encodeURIComponent('+'+fullP)};end`;
+    generateQR() {
+        const n = this.getName() || "New Contact";
+        const p = this.getPhone();
         
-        try {
-            window.location.href = intent;
-        } catch(e) {}
+        if(!p) return alert("Please enter a phone number");
 
-        // 2. Trigger vCard Download after a short delay
-        setTimeout(() => {
-            this.downloadVCF(n, fullP);
-            this.showQR(n, fullP);
-        }, 500);
-    },
-
-    downloadVCF(n, p) {
-        const vcf = `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL;TYPE=CELL:+${p}\nEND:VCARD`;
-        const blob = new Blob([vcf], { type: 'text/vcard' });
-        const url = window.URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${n.replace(/\s+/g, '_')}.vcf`;
-        document.body.appendChild(a);
-        a.click();
-        
-        this.toast("Attempting download...");
-        setTimeout(() => window.URL.revokeObjectURL(url), 2000);
-    },
-
-    showQR(n, p) {
-        const qrContainer = document.getElementById('qrcode-container');
         const qrDiv = document.getElementById('qrcode');
-        qrDiv.innerHTML = "";
-        qrContainer.style.display = "block";
+        const container = document.getElementById('qr-result');
         
-        const vcardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL:+${p}\nEND:VCARD`;
+        qrDiv.innerHTML = ""; // Clear old QR
+        container.style.display = "block";
+
+        // VCard format is recognized by all phone cameras/Google Lens
+        const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL;TYPE=CELL:+${p}\nEND:VCARD`;
+
         new QRCode(qrDiv, {
-            text: vcardData,
-            width: 150,
-            height: 150
+            text: vcard,
+            width: 180,
+            height: 180,
+            correctLevel: QRCode.CorrectLevel.H
         });
-    },
 
-    clear() {
-        document.getElementById('name').value = "";
-        document.getElementById('phone').value = "";
-        document.getElementById('qrcode-container').style.display = "none";
-    },
-
-    toast(msg) {
-        const t = document.createElement("div");
-        t.className = "toast";
-        t.innerText = msg;
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2000);
+        // Smooth scroll to QR code
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 };
 </script>
+
 </body>
 </html>
