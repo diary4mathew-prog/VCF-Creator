@@ -64,7 +64,9 @@ border:none;
 border-radius:14px;
 cursor:pointer;
 font-weight:600;
+transition: transform 0.1s;
 }
+button:active{transform: scale(0.98);}
 .whatsapp{background:#25D366;color:#fff}
 .save{background:#4f46e5;color:#fff}
 .clear{background:#f1f5f9}
@@ -100,6 +102,7 @@ color:#fff;
 padding:10px 20px;
 border-radius:30px;
 font-size:14px;
+z-index: 1000;
 }
 </style>
 </head>
@@ -108,16 +111,16 @@ font-size:14px;
 <div class="container">
 <div class="card">
 
-<h1>📱 Direct Contact Saver</h1>
+<h1>📱 Contact Saver</h1>
 <div class="sub">Save contact + open WhatsApp instantly</div>
 <div id="device" class="device">Detecting device...</div>
 
 <div class="input-group">
-<input id="name" placeholder="Contact Name">
+<input id="name" placeholder="Contact Name" autocomplete="off">
 </div>
 
 <div class="input-group">
-<input id="phone" placeholder="Phone Number">
+<input id="phone" type="tel" placeholder="Phone Number" autocomplete="off">
 </div>
 
 <div class="country-selector">
@@ -134,7 +137,7 @@ font-size:14px;
 </div>
 
 <div id="result" class="result">
-<div id="preview"></div>
+<div id="preview" style="text-align: center; margin-bottom: 10px;"></div>
 <div id="options"></div>
 </div>
 
@@ -142,145 +145,152 @@ font-size:14px;
 </div>
 
 <script>
-class App{
-constructor(){
-this.phoneInput=document.getElementById("phone")
-this.nameInput=document.getElementById("name")
-this.result=document.getElementById("result")
-this.preview=document.getElementById("preview")
-this.options=document.getElementById("options")
-this.country="91"
-this.deviceInfo=document.getElementById("device")
+class App {
+    constructor() {
+        this.phoneInput = document.getElementById("phone");
+        this.nameInput = document.getElementById("name");
+        this.result = document.getElementById("result");
+        this.preview = document.getElementById("preview");
+        this.options = document.getElementById("options");
+        this.country = "91";
+        this.deviceInfo = document.getElementById("device");
+        this.os = "Unknown";
 
-this.init()
+        this.init();
+    }
+
+    init() {
+        this.detectDevice();
+
+        document.querySelectorAll(".country-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".country-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                this.country = btn.dataset.code;
+            });
+        });
+
+        document.getElementById("waBtn").onclick = () => this.openWhatsApp();
+        document.getElementById("saveBtn").onclick = () => this.prepareContact();
+        document.getElementById("clearBtn").onclick = () => this.clear();
+    }
+
+    detectDevice() {
+        const ua = navigator.userAgent;
+        if (/Android/i.test(ua)) this.os = "Android";
+        else if (/iPhone|iPad|iPod/i.test(ua)) this.os = "iOS";
+        else if (/Windows/i.test(ua)) this.os = "Windows";
+        else if (/Mac/i.test(ua)) this.os = "Mac";
+        this.deviceInfo.textContent = "Detected: " + this.os;
+    }
+
+    validate() {
+        let raw = this.phoneInput.value.replace(/\D/g, "");
+        if (raw.length < 8) return null;
+        if (raw.length <= 10) raw = this.country + raw;
+        return raw;
+    }
+
+    openWhatsApp() {
+        const number = this.validate();
+        if (!number) return this.toast("Invalid number");
+        window.open(`https://wa.me/${number}`, "_blank");
+    }
+
+    prepareContact() {
+        const number = this.validate();
+        if (!number) return this.toast("Invalid number");
+
+        const name = this.nameInput.value.trim() || "Contact " + number.slice(-4);
+        this.preview.innerHTML = `<b>${name}</b><br>+${number}`;
+        this.result.style.display = "block";
+        this.showOptions(number, name);
+    }
+
+    showOptions(number, name) {
+        this.options.innerHTML = "";
+
+        // Android Direct Save Option
+        if (this.os === "Android") {
+            const android = document.createElement("div");
+            android.className = "option";
+            android.innerHTML = "🤖 Android Direct Save";
+            android.onclick = () => this.androidIntent(number, name);
+            this.options.appendChild(android);
+        }
+
+        // Standard vCard Option (Reliable fallback)
+        const vcard = document.createElement("div");
+        vcard.className = "option";
+        vcard.innerHTML = "📇 Download vCard (Recommended)";
+        vcard.onclick = () => this.downloadVCard(number, name);
+        this.options.appendChild(vcard);
+    }
+
+    androidIntent(number, name) {
+        const encodedName = encodeURIComponent(name);
+        const encodedPhone = encodeURIComponent("+" + number);
+        
+        // Correct single-line intent string for Chrome/Android
+        const intent = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${encodedName};S.phone=${encodedPhone};end`;
+
+        this.toast("Opening Contacts...");
+        
+        // Use window.location.replace to prevent browser history issues
+        window.location.href = intent;
+
+        // Auto-fallback to download if the intent fails to resolve in 1.5 seconds
+        setTimeout(() => {
+            if (document.hasFocus()) {
+                this.toast("Direct save failed, downloading vCard...");
+                this.downloadVCard(number, name);
+            }
+        }, 1500);
+    }
+
+    downloadVCard(number, name) {
+        const vcardContent = [
+            "BEGIN:VCARD",
+            "VERSION:3.0",
+            `FN:${name}`,
+            `TEL;TYPE=CELL:+${number}`,
+            "END:VCARD"
+        ].join("\n");
+
+        const fileName = name.replace(/[^\w]/gi, "_") + ".vcf";
+        const link = document.createElement("a");
+        
+        // Data URI is more reliable for mobile downloads of small text files
+        link.setAttribute("href", "data:text/vcard;charset=utf-8," + encodeURIComponent(vcardContent));
+        link.setAttribute("download", fileName);
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        this.toast("vCard downloaded");
+    }
+
+    clear() {
+        this.phoneInput.value = "";
+        this.nameInput.value = "";
+        this.result.style.display = "none";
+        this.toast("Cleared");
+    }
+
+    toast(msg) {
+        const existing = document.querySelector(".toast");
+        if (existing) existing.remove();
+        
+        const t = document.createElement("div");
+        t.className = "toast";
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
 }
 
-init(){
-this.detectDevice()
-
-document.querySelectorAll(".country-btn").forEach(btn=>{
-btn.addEventListener("click",()=>{
-document.querySelectorAll(".country-btn").forEach(b=>b.classList.remove("active"))
-btn.classList.add("active")
-this.country=btn.dataset.code
-})
-})
-
-document.getElementById("waBtn").onclick=()=>this.openWhatsApp()
-document.getElementById("saveBtn").onclick=()=>this.prepareContact()
-document.getElementById("clearBtn").onclick=()=>this.clear()
-}
-
-detectDevice(){
-const ua=navigator.userAgent
-let os="Unknown"
-if(/Android/i.test(ua)) os="Android"
-else if(/iPhone|iPad|iPod/i.test(ua)) os="iOS"
-else if(/Windows/i.test(ua)) os="Windows"
-else if(/Mac/i.test(ua)) os="Mac"
-this.os=os
-this.deviceInfo.textContent="Detected: "+os
-}
-
-validate(){
-let raw=this.phoneInput.value.replace(/\D/g,"")
-if(raw.length<8) return null
-if(raw.length<=10) raw=this.country+raw
-return raw
-}
-
-openWhatsApp(){
-const number=this.validate()
-if(!number) return this.toast("Invalid number")
-window.open("https://wa.me/"+number,"_blank")
-}
-
-prepareContact(){
-const number=this.validate()
-if(!number) return this.toast("Invalid number")
-
-const name=this.nameInput.value || "Contact "+number.slice(-4)
-this.preview.innerHTML="<b>"+name+"</b><br>+"+number
-this.result.style.display="block"
-this.showOptions(number,name)
-}
-
-showOptions(number,name){
-this.options.innerHTML=""
-
-if(this.os==="Android"){
-const android=document.createElement("div")
-android.className="option"
-android.innerHTML="🤖 Android Direct Save"
-android.onclick=()=>this.androidIntent(number,name)
-this.options.appendChild(android)
-}
-
-const vcard=document.createElement("div")
-vcard.className="option"
-vcard.innerHTML="📇 Download vCard (Recommended)"
-vcard.onclick=()=>this.downloadVCard(number,name)
-this.options.appendChild(vcard)
-}
-
-androidIntent(number,name){
-const encodedName=encodeURIComponent(name)
-const encodedPhone=encodeURIComponent("+"+number)
-
-const intent=
-`intent://com.android.contacts/contacts#Intent;
-action=android.intent.action.INSERT;
-type=vnd.android.cursor.dir/contact;
-S.name=${encodedName};
-S.phone=${encodedPhone};
-end`
-
-window.location.href=intent
-
-setTimeout(()=>{
-this.downloadVCard(number,name)
-},800)
-
-this.toast("Opening Contacts...")
-}
-
-downloadVCard(number,name){
-const vcard=
-`BEGIN:VCARD
-VERSION:3.0
-FN:${name}
-TEL;TYPE=CELL:+${number}
-END:VCARD`
-
-const blob=new Blob([vcard],{type:"text/vcard"})
-const url=URL.createObjectURL(blob)
-const a=document.createElement("a")
-a.href=url
-a.download=name.replace(/\s+/g,"_")+".vcf"
-document.body.appendChild(a)
-a.click()
-document.body.removeChild(a)
-URL.revokeObjectURL(url)
-
-this.toast("vCard downloaded")
-}
-
-clear(){
-this.phoneInput.value=""
-this.nameInput.value=""
-this.result.style.display="none"
-}
-
-toast(msg){
-const t=document.createElement("div")
-t.className="toast"
-t.textContent=msg
-document.body.appendChild(t)
-setTimeout(()=>t.remove(),2500)
-}
-}
-
-document.addEventListener("DOMContentLoaded",()=>new App())
+document.addEventListener("DOMContentLoaded", () => new App());
 </script>
 </body>
 </html>
