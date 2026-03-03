@@ -1,757 +1,488 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>WhatsApp Direct + Contact Saver</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
+  <title>WhatsApp Direct + Contact Saver</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; }
+    body {
+      background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 15px;
+    }
+    .container { width: 100%; max-width: 500px; }
+    .app-card { background: white; border-radius: 30px; padding: 25px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+    .header { text-align: center; margin-bottom: 25px; }
+    .header h1 { font-size: 24px; color: #1e293b; margin-bottom: 5px; }
+    .header p { color: #64748b; font-size: 14px; }
+    .device-detector { background: #f1f5f9; border-radius: 50px; padding: 8px 15px; display: inline-block; margin-bottom: 15px; font-size: 13px; font-weight: 500; }
 
-        body {
-            background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-        }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; margin-bottom: 8px; color: #334155; font-weight: 500; font-size: 14px; }
+    .input-group input { width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 15px; font-size: 16px; transition: all 0.3s; }
+    .input-group input:focus { border-color: #25D366; outline: none; }
 
-        .container {
-            width: 100%;
-            max-width: 500px;
-        }
+    .country-selector { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+    .country-btn { padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 25px; background: white; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .country-btn:hover { background: #f1f5f9; }
+    .country-btn.active { background: #25D366; color: white; border-color: #25D366; }
 
-        .app-card {
-            background: white;
-            border-radius: 30px;
-            padding: 25px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
+    .action-buttons { display: flex; gap: 10px; margin: 20px 0; }
+    .btn { flex: 1; padding: 15px; border: none; border-radius: 15px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn:active { transform: scale(0.98); }
+    .btn-whatsapp { background: #25D366; color: white; }
+    .btn-contact { background: #4f46e5; color: white; }
+    .btn-clear { background: #f1f5f9; color: #475569; }
 
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
+    .result-section { background: #f8fafc; border-radius: 20px; padding: 20px; margin: 20px 0; border: 2px solid #e2e8f0; }
+    .badge { display: inline-block; padding: 4px 12px; background: #e2e8f0; border-radius: 20px; font-size: 12px; margin-bottom: 10px; }
+    .contact-preview { background: white; border-radius: 12px; padding: 15px; margin: 15px 0; border: 2px solid #e2e8f0; }
+    .preview-item { display: flex; margin-bottom: 10px; }
+    .preview-label { width: 80px; color: #64748b; }
+    .preview-value { color: #0f172a; font-weight: 500; }
 
-        .header h1 {
-            font-size: 24px;
-            color: #1e293b;
-            margin-bottom: 5px;
-        }
+    .save-options { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+    .platform-option { display: flex; align-items: center; gap: 10px; padding: 15px; background: white; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+    .platform-option:hover { border-color: #4f46e5; background: #f5f3ff; }
+    .platform-icon { font-size: 24px; }
+    .platform-info { flex: 1; }
+    .platform-name { font-weight: 600; color: #1e293b; }
+    .platform-desc { font-size: 12px; color: #64748b; }
 
-        .header p {
-            color: #64748b;
-            font-size: 14px;
-        }
+    .direct-save-btn { background: #10b981; color: white; padding: 16px; border: none; border-radius: 15px; font-weight: 600; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
 
-        .device-detector {
-            background: #f1f5f9;
-            border-radius: 50px;
-            padding: 8px 15px;
-            display: inline-block;
-            margin-bottom: 15px;
-            font-size: 13px;
-            font-weight: 500;
-        }
+    .recent-section { margin-top: 20px; }
+    .recent-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .recent-list { list-style: none; }
+    .recent-list li { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+    .recent-list li:hover { background: #f1f5f9; transform: translateX(5px); }
+    .recent-info { display: flex; flex-direction: column; }
+    .recent-name { font-weight: 600; color: #0f172a; }
+    .recent-number { font-size: 12px; color: #64748b; }
 
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #334155;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #e2e8f0;
-            border-radius: 15px;
-            font-size: 16px;
-            transition: all 0.3s;
-        }
-
-        .input-group input:focus {
-            border-color: #25D366;
-            outline: none;
-        }
-
-        .country-selector {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin: 10px 0;
-        }
-
-        .country-btn {
-            padding: 8px 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 25px;
-            background: white;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .country-btn:hover {
-            background: #f1f5f9;
-        }
-
-        .country-btn.active {
-            background: #25D366;
-            color: white;
-            border-color: #25D366;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 15px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn-whatsapp {
-            background: #25D366;
-            color: white;
-        }
-
-        .btn-contact {
-            background: #4f46e5;
-            color: white;
-        }
-
-        .btn-clear {
-            background: #f1f5f9;
-            color: #475569;
-        }
-
-        .result-section {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 2px solid #e2e8f0;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            background: #e2e8f0;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-bottom: 10px;
-        }
-
-        .contact-preview {
-            background: white;
-            border-radius: 12px;
-            padding: 15px;
-            margin: 15px 0;
-            border: 2px solid #e2e8f0;
-        }
-
-        .preview-item {
-            display: flex;
-            margin-bottom: 10px;
-        }
-
-        .preview-label {
-            width: 80px;
-            color: #64748b;
-        }
-
-        .preview-value {
-            color: #0f172a;
-            font-weight: 500;
-        }
-
-        .save-options {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin: 15px 0;
-        }
-
-        .platform-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 15px;
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .platform-option:hover {
-            border-color: #4f46e5;
-            background: #f5f3ff;
-        }
-
-        .platform-icon {
-            font-size: 24px;
-        }
-
-        .platform-info {
-            flex: 1;
-        }
-
-        .platform-name {
-            font-weight: 600;
-            color: #1e293b;
-        }
-
-        .platform-desc {
-            font-size: 12px;
-            color: #64748b;
-        }
-
-        .direct-save-btn {
-            background: #10b981;
-            color: white;
-            padding: 16px;
-            border: none;
-            border-radius: 15px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-        }
-
-        .recent-section {
-            margin-top: 20px;
-        }
-
-        .recent-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .recent-list {
-            list-style: none;
-        }
-
-        .recent-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .recent-list li:hover {
-            background: #f1f5f9;
-            transform: translateX(5px);
-        }
-
-        .recent-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .recent-name {
-            font-weight: 600;
-            color: #0f172a;
-        }
-
-        .recent-number {
-            font-size: 12px;
-            color: #64748b;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e293b;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-size: 14px;
-            z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-    </style>
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 50px; font-size: 14px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+  </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="app-card">
-            <div class="header">
-                <h1>📱 Direct Contact Saver</h1>
-                <p>Save contacts directly to your phone + WhatsApp chat</p>
-                <div class="device-detector" id="deviceInfo">Detecting device...</div>
-            </div>
+  <div class="container">
+    <div class="app-card">
+      <div class="header">
+        <h1>📱 Direct Contact Saver</h1>
+        <p>Save contacts directly to your phone + WhatsApp chat</p>
+        <div class="device-detector" id="deviceInfo">Detecting device...</div>
+      </div>
 
-            <div class="input-group">
-                <label>👤 Contact Name</label>
-                <input type="text" id="contactName" placeholder="Enter full name" autocomplete="off">
-            </div>
+      <div class="input-group">
+        <label>👤 Contact Name</label>
+        <input type="text" id="contactName" placeholder="Enter full name" autocomplete="off" />
+      </div>
 
-            <div class="input-group">
-                <label>📞 Phone Number</label>
-                <input type="tel" id="phoneNumber" placeholder="Enter phone number" autocomplete="off">
-            </div>
+      <div class="input-group">
+        <label>📞 Phone Number</label>
+        <input type="tel" id="phoneNumber" placeholder="Enter phone number" autocomplete="off" />
+      </div>
 
-            <div class="country-selector" id="countrySelector">
-                <button class="country-btn" data-code="1" data-country="us">🇺🇸 USA +1</button>
-                <button class="country-btn" data-code="91" data-country="in">🇮🇳 India +91</button>
-                <button class="country-btn" data-code="44" data-country="gb">🇬🇧 UK +44</button>
-                <button class="country-btn" data-code="61" data-country="au">🇦🇺 Australia +61</button>
-                <button class="country-btn" data-code="86" data-country="cn">🇨🇳 China +86</button>
-            </div>
+      <div class="country-selector" id="countrySelector">
+        <button type="button" class="country-btn" data-code="1" data-country="us">🇺🇸 USA +1</button>
+        <button type="button" class="country-btn" data-code="91" data-country="in">🇮🇳 India +91</button>
+        <button type="button" class="country-btn" data-code="44" data-country="gb">🇬🇧 UK +44</button>
+        <button type="button" class="country-btn" data-code="61" data-country="au">🇦🇺 Australia +61</button>
+        <button type="button" class="country-btn" data-code="86" data-country="cn">🇨🇳 China +86</button>
+      </div>
 
-            <div class="action-buttons">
-                <button id="whatsappBtn" class="btn btn-whatsapp">
-                    <span>💬</span> WhatsApp
-                </button>
-                <button id="contactBtn" class="btn btn-contact">
-                    <span>📇</span> Save Contact
-                </button>
-                <button id="clearBtn" class="btn btn-clear">
-                    <span>🗑️</span>
-                </button>
-            </div>
+      <div class="action-buttons">
+        <button id="whatsappBtn" class="btn btn-whatsapp"><span>💬</span> WhatsApp</button>
+        <button id="contactBtn" class="btn btn-contact"><span>📇</span> Save Contact</button>
+        <button id="clearBtn" class="btn btn-clear"><span>🗑️</span></button>
+      </div>
 
-            <div id="resultSection" class="result-section" style="display: none;">
-                <span class="badge" id="resultBadge">Contact Info</span>
-                
-                <div class="contact-preview">
-                    <div class="preview-item">
-                        <span class="preview-label">Name:</span>
-                        <span class="preview-value" id="previewName">-</span>
-                    </div>
-                    <div class="preview-item">
-                        <span class="preview-label">Phone:</span>
-                        <span class="preview-value" id="previewPhone">-</span>
-                    </div>
-                </div>
+      <div id="resultSection" class="result-section" style="display:none;">
+        <span class="badge" id="resultBadge">Contact Info</span>
 
-                <div class="save-options" id="saveOptions">
-                    <!-- Options will be populated based on device -->
-                </div>
-
-                <button id="directSaveBtn" class="direct-save-btn" style="display: none;">
-                    <span>💾</span> Save to Contacts
-                </button>
-            </div>
-
-            <div class="recent-section">
-                <div class="recent-header">
-                    <h3>🕒 Recent Contacts</h3>
-                    <button id="clearRecentBtn" style="background: none; border: none; color: #ef4444; cursor: pointer;">Clear</button>
-                </div>
-                <ul id="recentList" class="recent-list"></ul>
-            </div>
+        <div class="contact-preview">
+          <div class="preview-item">
+            <span class="preview-label">Name:</span>
+            <span class="preview-value" id="previewName">-</span>
+          </div>
+          <div class="preview-item">
+            <span class="preview-label">Phone:</span>
+            <span class="preview-value" id="previewPhone">-</span>
+          </div>
         </div>
-    </div>
 
-    <script>
-        class DirectContactApp {
-            constructor() {
-                // Elements
-                this.phoneInput = document.getElementById('phoneNumber');
-                this.nameInput = document.getElementById('contactName');
-                this.whatsappBtn = document.getElementById('whatsappBtn');
-                this.contactBtn = document.getElementById('contactBtn');
-                this.clearBtn = document.getElementById('clearBtn');
-                this.resultSection = document.getElementById('resultSection');
-                self.whatsappLink = document.getElementById('whatsappLink');
-                this.recentList = document.getElementById('recentList');
-                this.clearRecentBtn = document.getElementById('clearRecentBtn');
-                this.resultBadge = document.getElementById('resultBadge');
-                this.previewName = document.getElementById('previewName');
-                this.previewPhone = document.getElementById('previewPhone');
-                this.saveOptions = document.getElementById('saveOptions');
-                this.directSaveBtn = document.getElementById('directSaveBtn');
-                this.deviceInfo = document.getElementById('deviceInfo');
-                
-                // Data
-                this.recentItems = this.loadRecent();
-                this.selectedCountry = '1';
-                this.device = this.detectDevice();
-                
-                // Initialize
-                this.init();
-            }
-            
-            init() {
-                // Event listeners
-                this.whatsappBtn.addEventListener('click', () => this.openWhatsApp());
-                this.contactBtn.addEventListener('click', () => this.prepareContact());
-                this.clearBtn.addEventListener('click', () => this.clearInputs());
-                this.clearRecentBtn.addEventListener('click', () => this.clearRecent());
-                
-                // Country selector
-                document.querySelectorAll('.country-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        document.querySelectorAll('.country-btn').forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        this.selectedCountry = btn.dataset.code;
-                    });
-                });
-                
-                // Set default active country
-                document.querySelector('[data-code="1"]').classList.add('active');
-                
-                // Display device info
-                this.deviceInfo.textContent = `📱 Detected: $%7Bthis.device.os%7D | $%7Bthis.device.browser%7D`;
-                
-                // Enter key
-                this.phoneInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.openWhatsApp();
-                });
-                
-                // Load recent
-                this.displayRecent();
-            }
-            
-            detectDevice() {
-                const ua = navigator.userAgent;
-                const platform = navigator.platform;
-                
-                let os = 'Unknown';
-                let browser = 'Unknown';
-                
-                // Detect OS
-                if (/Android/.test(ua)) os = 'Android';
-                else if (/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
-                else if (/Mac/.test(platform)) os = 'Mac';
-                else if (/Win/.test(platform)) os = 'Windows';
-                else if (/Linux/.test(platform)) os = 'Linux';
-                
-                // Detect Browser
-                if (/Chrome/.test(ua) && !/Edg/.test(ua)) browser = 'Chrome';
-                else if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
-                else if (/Firefox/.test(ua)) browser = 'Firefox';
-                else if (/Edg/.test(ua)) browser = 'Edge';
-                else if (/OPR|Opera/.test(ua)) browser = 'Opera';
-                
-                return { os, browser };
-            }
-            
-            validatePhone(number) {
-                const cleaned = number.replace(/\D/g, '');
-                return cleaned.length >= 8 ? cleaned : null;
-            }
-            
-            formatPhone(phone) {
-                const cleaned = phone.replace(/\D/g, '');
-                if (cleaned.length > 10) {
-                    const country = cleaned.slice(0, cleaned.length - 10);
-                    const number = cleaned.slice(-10);
-                    return `+$%7Bcountry%7D $%7Bnumber.replace(/(\d{3%7D)(\d{3})(\d{4})/, '$1 $2 $3')}`;
-                }
-                return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
-            }
-            
-            openWhatsApp() {
-                const phone = this.phoneInput.value.trim();
-                if (!phone) {
-                    this.showToast('Please enter a phone number');
-                    return;
-                }
-                
-                const validated = this.validatePhone(phone);
-                if (!validated) {
-                    this.showToast('Invalid phone number');
-                    return;
-                }
-                
-                const link = `https://wa.me/$%7Bvalidated%7D`;
-                window.open(link, '_blank');
-                
-                this.saveToRecent(validated, this.nameInput.value.trim(), 'whatsapp');
-            }
-            
-            prepareContact() {
-                const phone = this.phoneInput.value.trim();
-                const name = this.nameInput.value.trim();
-                
-                if (!phone) {
-                    this.showToast('Please enter a phone number');
-                    return;
-                }
-                
-                const validated = this.validatePhone(phone);
-                if (!validated) {
-                    this.showToast('Invalid phone number');
-                    return;
-                }
-                
-                const displayName = name || `Contact $%7Bvalidated.slice(-4)%7D`;
-                const displayPhone = this.formatPhone(validated);
-                
-                // Update preview
-                this.previewName.textContent = displayName;
-                this.previewPhone.textContent = displayPhone;
-                this.resultSection.style.display = 'block';
-                
-                // Show save options based on device
-                this.showSaveOptions(validated, displayName);
-                
-                this.saveToRecent(validated, name, 'contact');
-            }
-            
-            showSaveOptions(phone, name) {
-                this.saveOptions.innerHTML = '';
-                
-                // Option 1: Direct intent for Android
-                if (this.device.os === 'Android') {
-                    const androidOption = document.createElement('div');
-                    androidOption.className = 'platform-option';
-                    androidOption.innerHTML = `
-                        <span class="platform-icon">🤖</span>
-                        <div class="platform-info">
-                            <div class="platform-name">Android - Direct Save</div>
-                            <div class="platform-desc">Save directly to contacts using Intent</div>
-                        </div>
-                    `;
-                    androidOption.onclick = () => this.saveToAndroidContacts(phone, name);
-                    this.saveOptions.appendChild(androidOption);
-                }
-                
-                // Option 2: iOS URL scheme
-                if (this.device.os === 'iOS') {
-                    const iosOption = document.createElement('div');
-                    iosOption.className = 'platform-option';
-                    iosOption.innerHTML = `
-                        <span class="platform-icon">🍎</span>
-                        <div class="platform-info">
-                            <div class="platform-name">iPhone - Open in Contacts</div>
-                            <div class="platform-desc">Opens Contacts app with pre-filled details</div>
-                        </div>
-                    `;
-                    iosOption.onclick = () => this.saveToiOSContacts(phone, name);
-                    this.saveOptions.appendChild(iosOption);
-                }
-                
-                // Option 3: Universal vCard download
-                const universalOption = document.createElement('div');
-                universalOption.className = 'platform-option';
-                universalOption.innerHTML = `
-                    <span class="platform-icon">📇</span>
-                    <div class="platform-info">
-                        <div class="platform-name">Universal vCard</div>
-                        <div class="platform-desc">Download contact file (works on all devices)</div>
-                    </div>
-                `;
-                universalOption.onclick = () => this.downloadVCard(phone, name);
-                this.saveOptions.appendChild(universalOption);
-                
-                // Option 4: Copy to clipboard
-                const copyOption = document.createElement('div');
-                copyOption.className = 'platform-option';
-                copyOption.innerHTML = `
-                    <span class="platform-icon">📋</span>
-                    <div class="platform-info">
-                        <div class="platform-name">Copy to Clipboard</div>
-                        <div class="platform-desc">Copy details to paste in Contacts app</div>
-                    </div>
-                `;
-                copyOption.onclick = () => this.copyContactToClipboard(phone, name);
-                this.saveOptions.appendChild(copyOption);
-            }
-            
-            saveToAndroidContacts(phone, name) {
-                // Android intent:// scheme
-                const intentUrl = `intent://contacts#Intent;action=android.intent.action.INSERT;S.phone=$%7Bphone%7D;S.name=$%7Bname%7D;end`;
-                
-                // Try to open via intent
-                window.location.href = intentUrl;
-                
-                // Fallback after 500ms if intent fails
-                setTimeout(() => {
-                    if (confirm('Did Contacts open? If not, try the vCard option.')) {
-                        this.downloadVCard(phone, name);
-                    }
-                }, 500);
-                
-                this.showToast('Opening Contacts app...');
-            }
-            
-            saveToiOSContacts(phone, name) {
-                // iOS URL scheme for Contacts (works on some versions)
-                const encodedName = encodeURIComponent(name);
-                const encodedPhone = encodeURIComponent(phone);
-                
-                // Try to open via URL scheme
-                window.location.href = `contacts://create?name=$%7BencodedName%7D&phone=$%7BencodedPhone%7D`;
-                
-                // Fallback after 500ms
-                setTimeout(() => {
-                    if (confirm('Could not open Contacts automatically. Would you like to download a vCard instead?')) {
-                        this.downloadVCard(phone, name);
-                    }
-                }, 500);
-            }
-            
-            downloadVCard(phone, name) {
-                const vcard = `BEGIN:VCARD
-VERSION:3.0
-FN:$%7Bname%7D
-N:$%7Bname.split(' ').reverse().join(';')%7D;;;
-TEL;TYPE=CELL:$%7Bphone%7D
-END:VCARD`;
-                
-                const blob = new Blob([vcard], { type: 'text/vcard' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `$%7Bname.replace(/\s+/g, '_')%7D.vcf`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                
-                this.showToast('vCard downloaded! Open to add to contacts');
-            }
-            
-            copyContactToClipboard(phone, name) {
-                const text = `Name: $%7Bname%7D\nPhone: +$%7Bphone%7D`;
-                
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        this.showToast('Contact info copied!');
-                    }).catch(() => {
-                        this.fallbackCopy(text);
-                    });
-                } else {
-                    this.fallbackCopy(text);
-                }
-            }
-            
-            fallbackCopy(text) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                this.showToast('Contact info copied!');
-            }
-            
-            clearInputs() {
-                this.phoneInput.value = '';
-                this.nameInput.value = '';
-                this.resultSection.style.display = 'none';
-                this.phoneInput.focus();
-            }
-            
-            showToast(message) {
-                const toast = document.createElement('div');
-                toast.className = 'toast';
-                toast.textContent = message;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 3000);
-            }
-            
-            saveToRecent(number, name, type) {
-                const item = {
-                    id: Date.now(),
-                    number: number,
-                    name: name || null,
-                    type: type,
-                    time: new Date().toLocaleTimeString()
-                };
-                
-                this.recentItems.unshift(item);
-                if (this.recentItems.length > 10) this.recentItems.pop();
-                localStorage.setItem('direct_contacts', JSON.stringify(this.recentItems));
-                this.displayRecent();
-            }
-            
-            loadRecent() {
-                try {
-                    return JSON.parse(localStorage.getItem('direct_contacts')) || [];
-                } catch {
-                    return [];
-                }
-            }
-            
-            displayRecent() {
-                if (!this.recentList) return;
-                
-                this.recentList.innerHTML = '';
-                
-                if (this.recentItems.length === 0) {
-                    this.recentList.innerHTML = '<li style="justify-content: center; color: #94a3b8;">No recent contacts</li>';
-                    return;
-                }
-                
-                this.recentItems.forEach(item => {
-                    const li = document.createElement('li');
-                    const icon = item.type === 'whatsapp' ? '💬' : '📇';
-                    const displayName = item.name || `+$%7Bitem.number%7D`;
-                    
-                    li.innerHTML = `
-                        <div class="recent-info">
-                            <span class="recent-name">$%7Bicon%7D $%7BdisplayName%7D</span>
-                            <span class="recent-number">+$%7Bitem.number%7D</span>
-                        </div>
-                        <span style="font-size: 11px; color: #94a3b8;">$%7Bitem.time%7D</span>
-                    `;
-                    
-                    li.onclick = () => {
-                        this.phoneInput.value = item.number;
-                        if (item.name) this.nameInput.value = item.name;
-                        this.prepareContact();
-                    };
-                    
-                    this.recentList.appendChild(li);
-                });
-            }
-            
-            clearRecent() {
-                if (confirm('Clear all recent items?')) {
-                    this.recentItems = [];
-                    localStorage.removeItem('direct_contacts');
-                    this.displayRecent();
-                }
-            }
+        <div class="save-options" id="saveOptions"></div>
+
+        <button id="directSaveBtn" class="direct-save-btn" style="display:none;">
+          <span>💾</span> Save to Contacts
+        </button>
+      </div>
+
+      <div class="recent-section">
+        <div class="recent-header">
+          <h3>🕒 Recent Contacts</h3>
+          <button id="clearRecentBtn" style="background:none;border:none;color:#ef4444;cursor:pointer;">Clear</button>
+        </div>
+        <ul id="recentList" class="recent-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class DirectContactApp {
+      constructor() {
+        // Elements
+        this.phoneInput = document.getElementById('phoneNumber');
+        this.nameInput = document.getElementById('contactName');
+        this.whatsappBtn = document.getElementById('whatsappBtn');
+        this.contactBtn = document.getElementById('contactBtn');
+        this.clearBtn = document.getElementById('clearBtn');
+        this.resultSection = document.getElementById('resultSection');
+        this.recentList = document.getElementById('recentList');
+        this.clearRecentBtn = document.getElementById('clearRecentBtn');
+        this.resultBadge = document.getElementById('resultBadge');
+        this.previewName = document.getElementById('previewName');
+        this.previewPhone = document.getElementById('previewPhone');
+        this.saveOptions = document.getElementById('saveOptions');
+        this.directSaveBtn = document.getElementById('directSaveBtn');
+        this.deviceInfo = document.getElementById('deviceInfo');
+
+        // Data
+        this.recentItems = this.loadRecent();
+        this.selectedCountry = '1'; // default
+        this.device = this.detectDevice();
+
+        this.init();
+      }
+
+      init() {
+        this.whatsappBtn.addEventListener('click', () => this.openWhatsApp());
+        this.contactBtn.addEventListener('click', () => this.prepareContact());
+        this.clearBtn.addEventListener('click', () => this.clearInputs());
+        this.clearRecentBtn.addEventListener('click', () => this.clearRecent());
+
+        document.querySelectorAll('.country-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.country-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.selectedCountry = btn.dataset.code;
+          });
+        });
+
+        const defaultBtn = document.querySelector('[data-code="1"]');
+        if (defaultBtn) defaultBtn.classList.add('active');
+
+        this.deviceInfo.textContent = `📱 Detected: ${this.device.os} | ${this.device.browser}`;
+
+        this.phoneInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') this.openWhatsApp();
+        });
+
+        this.displayRecent();
+      }
+
+      detectDevice() {
+        const ua = navigator.userAgent;
+        const platform = navigator.platform;
+
+        let os = 'Unknown';
+        let browser = 'Unknown';
+
+        if (/Android/i.test(ua)) os = 'Android';
+        else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+        else if (/Mac/i.test(platform)) os = 'Mac';
+        else if (/Win/i.test(platform)) os = 'Windows';
+        else if (/Linux/i.test(platform)) os = 'Linux';
+
+        if (/Edg/i.test(ua)) browser = 'Edge';
+        else if (/OPR|Opera/i.test(ua)) browser = 'Opera';
+        else if (/Chrome/i.test(ua) && !/Edg/i.test(ua)) browser = 'Chrome';
+        else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
+        else if (/Firefox/i.test(ua)) browser = 'Firefox';
+
+        return { os, browser };
+      }
+
+      // Returns digits-only E.164 (country+national) using selectedCountry if needed
+      validatePhone(raw) {
+        const cleaned = raw.replace(/\D/g, '');
+        if (cleaned.length < 8) return null;
+
+        // If user typed with country code already (longer than typical national), accept as-is
+        // Else prefix selected country
+        if (cleaned.length <= 10) {
+          return `${this.selectedCountry}${cleaned}`;
         }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => new DirectContactApp());
-    </script>
+        return cleaned;
+      }
+
+      formatPhoneE164Digits(e164Digits) {
+        // e164Digits = country+number, digits only
+        // Best-effort formatting: +CC XXXXX...
+        const cc = this.selectedCountry && e164Digits.startsWith(this.selectedCountry)
+          ? this.selectedCountry
+          : e164Digits.slice(0, Math.max(1, e164Digits.length - 10));
+
+        const national = e164Digits.slice(cc.length);
+        return `+${cc} ${national}`;
+      }
+
+      openWhatsApp() {
+        const phone = this.phoneInput.value.trim();
+        if (!phone) return this.showToast('Please enter a phone number');
+
+        const validated = this.validatePhone(phone);
+        if (!validated) return this.showToast('Invalid phone number');
+
+        const link = `https://wa.me/${validated}`;
+        window.open(link, '_blank');
+
+        this.saveToRecent(validated, this.nameInput.value.trim(), 'whatsapp');
+      }
+
+      prepareContact() {
+        const phone = this.phoneInput.value.trim();
+        const name = this.nameInput.value.trim();
+
+        if (!phone) return this.showToast('Please enter a phone number');
+
+        const validated = this.validatePhone(phone);
+        if (!validated) return this.showToast('Invalid phone number');
+
+        const displayName = name || `Contact ${validated.slice(-4)}`;
+        const displayPhone = this.formatPhoneE164Digits(validated);
+
+        this.previewName.textContent = displayName;
+        this.previewPhone.textContent = displayPhone;
+        this.resultSection.style.display = 'block';
+
+        this.showSaveOptions(validated, displayName);
+
+        this.saveToRecent(validated, name, 'contact');
+      }
+
+      showSaveOptions(e164Digits, name) {
+        this.saveOptions.innerHTML = '';
+
+        if (this.device.os === 'Android') {
+          const androidOption = document.createElement('div');
+          androidOption.className = 'platform-option';
+          androidOption.innerHTML = `
+            <span class="platform-icon">🤖</span>
+            <div class="platform-info">
+              <div class="platform-name">Android - Direct Save</div>
+              <div class="platform-desc">Save directly to contacts using Intent</div>
+            </div>
+          `;
+          androidOption.onclick = () => this.saveToAndroidContacts(e164Digits, name);
+          this.saveOptions.appendChild(androidOption);
+        }
+
+        if (this.device.os === 'iOS') {
+          const iosOption = document.createElement('div');
+          iosOption.className = 'platform-option';
+          iosOption.innerHTML = `
+            <span class="platform-icon">🍎</span>
+            <div class="platform-info">
+              <div class="platform-name">iPhone - Try Open Contacts</div>
+              <div class="platform-desc">May work on some iOS versions (fallback to vCard)</div>
+            </div>
+          `;
+          iosOption.onclick = () => this.saveToiOSContacts(e164Digits, name);
+          this.saveOptions.appendChild(iosOption);
+        }
+
+        const universalOption = document.createElement('div');
+        universalOption.className = 'platform-option';
+        universalOption.innerHTML = `
+          <span class="platform-icon">📇</span>
+          <div class="platform-info">
+            <div class="platform-name">Universal vCard</div>
+            <div class="platform-desc">Download contact file (works on all devices)</div>
+          </div>
+        `;
+        universalOption.onclick = () => this.downloadVCard(e164Digits, name);
+        this.saveOptions.appendChild(universalOption);
+
+        const copyOption = document.createElement('div');
+        copyOption.className = 'platform-option';
+        copyOption.innerHTML = `
+          <span class="platform-icon">📋</span>
+          <div class="platform-info">
+            <div class="platform-name">Copy to Clipboard</div>
+            <div class="platform-desc">Copy details to paste in Contacts app</div>
+          </div>
+        `;
+        copyOption.onclick = () => this.copyContactToClipboard(e164Digits, name);
+        this.saveOptions.appendChild(copyOption);
+      }
+
+      saveToAndroidContacts(e164Digits, name) {
+        // Note: intent insert varies by device/ROM; vCard is the reliable path.
+        const encodedName = encodeURIComponent(name);
+        const encodedPhone = encodeURIComponent(`+${e164Digits}`);
+
+        const intentUrl =
+          `intent://contacts#Intent;action=android.intent.action.INSERT;` +
+          `S.name=${encodedName};S.phone=${encodedPhone};end`;
+
+        window.location.href = intentUrl;
+
+        setTimeout(() => {
+          if (confirm('Did Contacts open? If not, use the vCard option.')) {
+            this.downloadVCard(e164Digits, name);
+          }
+        }, 700);
+
+        this.showToast('Trying to open Contacts…');
+      }
+
+      saveToiOSContacts(e164Digits, name) {
+        const encodedName = encodeURIComponent(name);
+        const encodedPhone = encodeURIComponent(`+${e164Digits}`);
+
+        // iOS does not reliably support creating contacts via URL scheme across versions.
+        window.location.href = `contacts://create?name=${encodedName}&phone=${encodedPhone}`;
+
+        setTimeout(() => {
+          if (confirm('Could not open Contacts automatically. Download vCard instead?')) {
+            this.downloadVCard(e164Digits, name);
+          }
+        }, 700);
+      }
+
+      downloadVCard(e164Digits, name) {
+        const safeName = (name && name.trim()) ? name.trim() : `Contact_${e164Digits.slice(-4)}`;
+
+        const parts = safeName.split(/\s+/).filter(Boolean);
+        const last = parts.length > 1 ? parts[parts.length - 1] : '';
+        const first = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0] || safeName;
+
+        const vcard =
+`BEGIN:VCARD
+VERSION:3.0
+FN:${safeName}
+N:${last};${first};;;
+TEL;TYPE=CELL:+${e164Digits}
+END:VCARD`;
+
+        const blob = new Blob([vcard], { type: 'text/vcard' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${safeName.replace(/\s+/g, '_')}.vcf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.showToast('vCard downloaded! Open it to add the contact.');
+      }
+
+      copyContactToClipboard(e164Digits, name) {
+        const safeName = (name && name.trim()) ? name.trim() : `Contact ${e164Digits.slice(-4)}`;
+        const text = `Name: ${safeName}\nPhone: +${e164Digits}`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+            .then(() => this.showToast('Contact info copied!'))
+            .catch(() => this.fallbackCopy(text));
+        } else {
+          this.fallbackCopy(text);
+        }
+      }
+
+      fallbackCopy(text) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        this.showToast('Contact info copied!');
+      }
+
+      clearInputs() {
+        this.phoneInput.value = '';
+        this.nameInput.value = '';
+        this.resultSection.style.display = 'none';
+        this.phoneInput.focus();
+      }
+
+      showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+      }
+
+      saveToRecent(number, name, type) {
+        const item = {
+          id: Date.now(),
+          number,
+          name: name || null,
+          type,
+          time: new Date().toLocaleTimeString()
+        };
+
+        this.recentItems.unshift(item);
+        if (this.recentItems.length > 10) this.recentItems.pop();
+        localStorage.setItem('direct_contacts', JSON.stringify(this.recentItems));
+        this.displayRecent();
+      }
+
+      loadRecent() {
+        try {
+          return JSON.parse(localStorage.getItem('direct_contacts')) || [];
+        } catch {
+          return [];
+        }
+      }
+
+      displayRecent() {
+        if (!this.recentList) return;
+        this.recentList.innerHTML = '';
+
+        if (this.recentItems.length === 0) {
+          this.recentList.innerHTML = '<li style="justify-content:center;color:#94a3b8;">No recent contacts</li>';
+          return;
+        }
+
+        this.recentItems.forEach(item => {
+          const li = document.createElement('li');
+          const icon = item.type === 'whatsapp' ? '💬' : '📇';
+          const displayName = item.name || `+${item.number}`;
+
+          li.innerHTML = `
+            <div class="recent-info">
+              <span class="recent-name">${icon} ${displayName}</span>
+              <span class="recent-number">+${item.number}</span>
+            </div>
+            <span style="font-size:11px;color:#94a3b8;">${item.time}</span>
+          `;
+
+          li.onclick = () => {
+            // Put only national part back? Here we keep full digits; user can change country if needed.
+            this.phoneInput.value = item.number;
+            if (item.name) this.nameInput.value = item.name;
+            this.prepareContact();
+          };
+
+          this.recentList.appendChild(li);
+        });
+      }
+
+      clearRecent() {
+        if (confirm('Clear all recent items?')) {
+          this.recentItems = [];
+          localStorage.removeItem('direct_contacts');
+          this.displayRecent();
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => new DirectContactApp());
+  </script>
 </body>
 </html>
