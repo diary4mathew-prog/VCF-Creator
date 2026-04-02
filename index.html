@@ -2,106 +2,600 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp & QR Contact</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Lens Contact Maker | WhatsApp + QR</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,sans-serif}
-        body{background:#e5ddd5;display:flex;justify-content:center;padding:20px;min-height:100vh}
-        .card{background:#fff;padding:25px;border-radius:20px;width:100%;max-width:380px;box-shadow:0 10px 30px rgba(0,0,0,0.1);height:fit-content}
-        h2{text-align:center;color:#075e54;margin-bottom:20px;font-size:20px}
-        
-        .input-box{margin-bottom:15px}
-        label{display:block;font-size:12px;color:#666;margin-bottom:5px;margin-left:5px}
-        input{width:100%;padding:15px;border:1.5px solid #eee;border-radius:12px;font-size:16px;background:#f9f9f9}
-        input:focus{outline:none;border-color:#25D366;background:#fff}
-
-        .btn-group{display:flex;flex-direction:column;gap:10px;margin-top:10px}
-        button{width:100%;padding:15px;border:none;border-radius:12px;font-weight:700;cursor:pointer;transition:0.2s}
-        .btn-wa{background:#25D366;color:white}
-        .btn-qr{background:#128C7E;color:white}
-        button:active{transform:scale(0.98)}
-
-        #qr-result{
-            display:none;
-            margin-top:25px;
-            text-align:center;
-            padding-top:20px;
-            border-top:1px dashed #ccc;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
         }
-        #qrcode{display:inline-block;padding:10px;background:#fff;border:1px solid #eee}
-        .instruction{font-size:12px;color:#777;margin-top:10px;line-height:1.4}
+
+        body {
+            background: #e5ddd5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* main card */
+        .card {
+            background: white;
+            max-width: 420px;
+            width: 100%;
+            border-radius: 32px;
+            padding: 24px 22px 32px;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #075e54, #128C7E);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: -0.2px;
+        }
+
+        .sub {
+            font-size: 0.75rem;
+            color: #6c757d;
+            margin-bottom: 24px;
+            border-left: 3px solid #25D366;
+            padding-left: 10px;
+        }
+
+        /* inputs */
+        .input-group {
+            margin-bottom: 18px;
+        }
+
+        .input-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #2c3e2f;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+        }
+
+        .input-group label i {
+            font-weight: normal;
+            font-size: 1rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            background: #fefefe;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 70px;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #25D366;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.1);
+        }
+
+        /* buttons */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 18px 0 12px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #f0f2f5;
+            color: #1f2a3a;
+        }
+
+        .btn-wa {
+            background: #25D366;
+            color: white;
+            box-shadow: 0 4px 8px rgba(37, 211, 102, 0.2);
+        }
+
+        .btn-qr {
+            background: #128C7E;
+            color: white;
+        }
+
+        .btn-lens {
+            background: #f0f2f5;
+            border: 1px solid #cddae9;
+            color: #075e54;
+            font-weight: 600;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        /* QR result area */
+        #qr-result {
+            display: none;
+            margin-top: 28px;
+            text-align: center;
+            padding-top: 18px;
+            border-top: 2px dotted #cbd5e1;
+        }
+
+        #qrcode {
+            display: inline-flex;
+            justify-content: center;
+            padding: 12px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+        }
+
+        .instruction {
+            font-size: 0.7rem;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 20px;
+            color: #334155;
+            margin-top: 8px;
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.2s;
+        }
+
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .modal-container {
+            background: white;
+            width: 90%;
+            max-width: 380px;
+            border-radius: 36px;
+            padding: 24px 20px 28px;
+            box-shadow: 0 30px 40px rgba(0,0,0,0.3);
+            animation: fadeSlideUp 0.2s ease;
+        }
+
+        @keyframes fadeSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-container h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #075e54;
+        }
+
+        .modal-container p {
+            font-size: 0.75rem;
+            color: #5b6e8c;
+            margin-bottom: 16px;
+        }
+
+        .modal-container textarea {
+            width: 100%;
+            border-radius: 20px;
+            border: 1.5px solid #cbd5e1;
+            padding: 14px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            font-family: monospace;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 40px;
+            background: #eef2ff;
+            color: #1e293b;
+        }
+
+        .modal-buttons .btn-parse {
+            background: #075e54;
+            color: white;
+        }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #b91c1c;
+            font-size: 0.7rem;
+            padding: 8px 12px;
+            border-radius: 40px;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+        hr {
+            margin: 8px 0;
+        }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>Connect Instantly</h2>
-    
-    <div class="input-box">
-        <label>Name</label>
-        <input id="name" type="text" placeholder="e.g. John Doe">
+    <h2>📇 Lens Contact</h2>
+    <div class="sub">Paste from Google Lens → auto fill name, phone & notes</div>
+
+    <!-- Name field -->
+    <div class="input-group">
+        <label>✏️ Full Name</label>
+        <input type="text" id="contactName" placeholder="e.g. Maria Lopez" autocomplete="off">
     </div>
 
-    <div class="input-box">
-        <label>Phone (with country code)</label>
-        <input id="phone" type="tel" placeholder="e.g. 919876543210">
+    <!-- Phone field -->
+    <div class="input-group">
+        <label>📞 Phone (digits only, with country code)</label>
+        <input type="tel" id="contactPhone" placeholder="e.g. 919876543210" autocomplete="off">
     </div>
+
+    <!-- Notes field -->
+    <div class="input-group">
+        <label>📝 Notes (optional)</label>
+        <textarea id="contactNotes" rows="2" placeholder="Meeting notes, address, etc..."></textarea>
+    </div>
+
+    <!-- Paste from Lens trigger -->
+    <button class="btn-lens" id="openLensModalBtn">📋 Paste from Google Lens</button>
 
     <div class="btn-group">
-        <button class="btn-wa" onclick="actions.openWA()">Message on WhatsApp</button>
-        <button class="btn-qr" onclick="actions.generateQR()">Generate Contact QR</button>
+        <button class="btn-wa" id="whatsappBtn">💬 Message on WhatsApp</button>
+        <button class="btn-qr" id="generateQrBtn">📱 Generate Contact QR</button>
     </div>
 
+    <!-- QR display zone -->
     <div id="qr-result">
         <div id="qrcode"></div>
-        <p class="instruction">
-            <strong>How to save:</strong><br>
-            1. Take a screenshot.<br>
-            2. Open with <b>Google Lens</b> or Photos.<br>
-            3. Tap "Add Contact".
-        </p>
+        <div class="instruction">
+            ⚡ <strong>Save to phone:</strong> Screenshot QR → Open with <b>Google Lens</b> or Photos → Tap "Add contact"<br>
+            <span style="font-size:0.65rem;">(vCard includes Name, Phone & Notes)</span>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL for pasting Lens text -->
+<div id="lensModal" class="modal-overlay">
+    <div class="modal-container">
+        <h3>🔍 Paste from Lens</h3>
+        <p>Paste text copied from Google Lens (business card, note, etc.)<br>Format: <strong>Name  PhoneDigits  Notes</strong></p>
+        <textarea id="lensRawText" rows="4" placeholder="Example:&#10;John Doe 919876543210 meeting tomorrow 3pm"></textarea>
+        <div id="modalError" class="error-msg" style="display: none;"></div>
+        <div class="modal-buttons">
+            <button id="cancelModalBtn">Cancel</button>
+            <button id="parseLensBtn" class="btn-parse">✨ Parse & Fill</button>
+        </div>
     </div>
 </div>
 
 <script>
-const actions = {
-    getName: () => document.getElementById('name').value.trim(),
-    getPhone: () => document.getElementById('phone').value.replace(/\D/g, ''),
+    // DOM elements
+    const nameInput = document.getElementById('contactName');
+    const phoneInput = document.getElementById('contactPhone');
+    const notesInput = document.getElementById('contactNotes');
+    const whatsappBtn = document.getElementById('whatsappBtn');
+    const generateQrBtn = document.getElementById('generateQrBtn');
+    const qrResultDiv = document.getElementById('qr-result');
+    const qrcodeContainer = document.getElementById('qrcode');
 
-    openWA() {
-        const p = this.getPhone();
-        if(!p) return alert("Please enter a phone number");
-        window.open(`https://wa.me/${p}`, '_blank');
-    },
+    // Modal elements
+    const modal = document.getElementById('lensModal');
+    const openModalBtn = document.getElementById('openLensModalBtn');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const parseLensBtn = document.getElementById('parseLensBtn');
+    const lensRawText = document.getElementById('lensRawText');
+    const modalErrorDiv = document.getElementById('modalError');
 
-    generateQR() {
-        const n = this.getName() || "New Contact";
-        const p = this.getPhone();
-        
-        if(!p) return alert("Please enter a phone number");
-
-        const qrDiv = document.getElementById('qrcode');
-        const container = document.getElementById('qr-result');
-        
-        qrDiv.innerHTML = ""; // Clear old QR
-        container.style.display = "block";
-
-        // VCard format is recognized by all phone cameras/Google Lens
-        const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${n}\nTEL;TYPE=CELL:+${p}\nEND:VCARD`;
-
-        new QRCode(qrDiv, {
-            text: vcard,
-            width: 180,
-            height: 180,
-            correctLevel: QRCode.CorrectLevel.H
-        });
-
-        // Smooth scroll to QR code
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    // ---------- HELPER: clear previous QR ----------
+    function clearQR() {
+        qrcodeContainer.innerHTML = '';
+        qrResultDiv.style.display = 'none';
     }
-};
-</script>
 
+    // ---------- GENERATE QR (vCard with NOTES) ----------
+    function generateVCardQR() {
+        let name = nameInput.value.trim();
+        let phone = phoneInput.value.trim();
+        let notes = notesInput.value.trim();
+
+        if (!phone) {
+            alert("❌ Phone number is required to generate contact QR.");
+            return false;
+        }
+
+        // if name empty, fallback to "Contact"
+        const fullName = name === "" ? "Saved Contact" : name;
+        
+        // Build vCard 3.0
+        let vcard = "BEGIN:VCARD\n";
+        vcard += "VERSION:3.0\n";
+        vcard += `FN:${fullName}\n`;
+        vcard += `TEL;TYPE=CELL:${phone}\n`;
+        if (notes !== "") {
+            // escape newlines and semicolons minimally for vcard
+            let cleanNotes = notes.replace(/[\n\r]+/g, ' ').replace(/[;,]/g, ' ');
+            vcard += `NOTE:${cleanNotes}\n`;
+        }
+        vcard += "END:VCARD";
+
+        // Show QR container
+        qrResultDiv.style.display = "block";
+        qrcodeContainer.innerHTML = ""; 
+        
+        try {
+            new QRCode(qrcodeContainer, {
+                text: vcard,
+                width: 190,
+                height: 190,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        } catch(e) {
+            console.error(e);
+            alert("QR generation error, try again.");
+        }
+        
+        // smooth scroll to QR
+        setTimeout(() => {
+            qrResultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 100);
+        return true;
+    }
+
+    // ---------- OPEN WHATSAPP (no prefilled message) ----------
+    function openWhatsApp() {
+        let phone = phoneInput.value.trim();
+        if (!phone) {
+            alert("📞 Please enter a phone number first.");
+            return;
+        }
+        // Remove all non-digits (just in case user typed + or spaces)
+        const digitsOnly = phone.replace(/\D/g, '');
+        if (digitsOnly.length === 0) {
+            alert("Invalid phone number. Use digits and country code.");
+            return;
+        }
+        window.open(`https://wa.me/${digitsOnly}`, '_blank');
+    }
+
+    // ---------- STRICT PARSER: Name + (single phone block) + Notes ----------
+    // Rules:
+    // - Find first occurrence of a phone-like block (digits, optional +, spaces, dashes, parentheses)
+    // - But we must ensure there is exactly ONE phone block (contiguous digits group after cleaning separators)
+    // - If digits appear in multiple separate groups (like "123 main 456") => reject.
+    // - If phone block is at very beginning (no characters before it) => reject (needs name)
+    // - Returns { success, name, phoneDigits, notes, errorMsg }
+    function parseLensText(rawText) {
+        if (!rawText || rawText.trim() === "") {
+            return { success: false, errorMsg: "📭 No text pasted. Please enter text from Lens." };
+        }
+        
+        const text = rawText.trim();
+        
+        // Step 1: extract ALL separate digit groups (contiguous digits)
+        const digitGroups = text.match(/\d+/g) || [];
+        if (digitGroups.length === 0) {
+            return { success: false, errorMsg: "🔢 No phone number found. Make sure the text contains digits." };
+        }
+        
+        // Important: we need to locate "phone block" which is a substring containing digits + optional separators
+        // But to detect "multiple separate groups" in a strict sense: if there are more than 1 group of digits
+        // but they are separated by any non-digit character AND there's a gap of letters/symbols => we treat as scattered
+        // However rule #2: Example "Michael 123 main st 456 notes here" -> digitGroups = ['123','456'] => 2 groups => REJECT
+        if (digitGroups.length > 1) {
+            return { success: false, errorMsg: "⚠️ Multiple number fragments found. Please edit data or enter manually (single phone block required)." };
+        }
+        
+        // Now we have exactly ONE digit group. However, we must ensure that the phone number block (with possible separators)
+        // is not split across the text with letters inside? Actually because we have exactly one digit cluster, it's fine.
+        // But we must also reject if phone appears at the very beginning (no name before first digit)
+        const firstDigitIndex = text.search(/\d/);
+        if (firstDigitIndex === 0) {
+            return { success: false, errorMsg: "❌ Phone number detected at start. Please add a name before the phone number." };
+        }
+        
+        // Extract name: everything BEFORE the first digit
+        const namePart = text.substring(0, firstDigitIndex).trim();
+        if (namePart.length === 0) {
+            return { success: false, errorMsg: "👤 Name missing before phone number. Please ensure name comes first." };
+        }
+        
+        // Now find where the phone block ends (from the first digit to the last digit of that same contiguous block)
+        // But because there might be spaces, dashes, plus signs between digits, we need to capture the whole phone token.
+        // Strategy: find the position of last character belonging to phone block: from first digit index until we hit a character that is not digit, space, dash, plus, parentheses, or dot.
+        let endPhoneIdx = firstDigitIndex;
+        for (let i = firstDigitIndex; i < text.length; i++) {
+            const ch = text[i];
+            // Allow digits, spaces, plus, hyphen, parentheses, dot (for formatting)
+            if (/[\d\s\+\(\)\-\.]/.test(ch)) {
+                endPhoneIdx = i;
+            } else {
+                break;
+            }
+        }
+        
+        // Extract phoneBlock raw (includes separators)
+        const phoneBlockRaw = text.substring(firstDigitIndex, endPhoneIdx + 1);
+        // Extract digits from that block
+        const phoneDigits = phoneBlockRaw.replace(/\D/g, '');
+        if (phoneDigits.length === 0) {
+            return { success: false, errorMsg: "Invalid phone block: no digits inside." };
+        }
+        
+        // Notes: everything AFTER the phone block (after endPhoneIdx+1)
+        let notesPart = "";
+        if (endPhoneIdx + 1 < text.length) {
+            notesPart = text.substring(endPhoneIdx + 1).trim();
+        }
+        
+        // Extra safety: ensure that the phone digits are not obviously broken? Already handled.
+        return {
+            success: true,
+            name: namePart,
+            phoneDigits: phoneDigits,
+            notes: notesPart
+        };
+    }
+
+    // Fill fields after successful parse
+    function applyParsedData(parsed) {
+        nameInput.value = parsed.name;
+        phoneInput.value = parsed.phoneDigits;
+        notesInput.value = parsed.notes;
+        // Clear any existing QR when fields change
+        clearQR();
+    }
+
+    // Show modal with fresh state
+    function openModal() {
+        lensRawText.value = "";
+        modalErrorDiv.style.display = "none";
+        modalErrorDiv.innerText = "";
+        modal.classList.add("active");
+        lensRawText.focus();
+    }
+
+    function closeModal() {
+        modal.classList.remove("active");
+    }
+
+    // Parse action from modal
+    function handleParseAndFill() {
+        const raw = lensRawText.value;
+        const result = parseLensText(raw);
+        
+        if (!result.success) {
+            modalErrorDiv.innerText = result.errorMsg;
+            modalErrorDiv.style.display = "block";
+            return;
+        }
+        
+        // Success: apply data, close modal, optional success message
+        applyParsedData(result);
+        closeModal();
+        // subtle feedback: clear any old QR and maybe show a tiny alert? but avoid intrusive
+        // we also scroll to top fields gently
+        nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Optional small visual hint
+        const tempHint = document.createElement('div');
+        tempHint.innerText = "✓ Fields auto-filled from Lens!";
+        tempHint.style.position = 'fixed';
+        tempHint.style.bottom = '20px';
+        tempHint.style.left = '50%';
+        tempHint.style.transform = 'translateX(-50%)';
+        tempHint.style.backgroundColor = '#075e54';
+        tempHint.style.color = 'white';
+        tempHint.style.padding = '8px 18px';
+        tempHint.style.borderRadius = '40px';
+        tempHint.style.fontSize = '0.8rem';
+        tempHint.style.zIndex = '999';
+        tempHint.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        document.body.appendChild(tempHint);
+        setTimeout(() => tempHint.remove(), 2000);
+    }
+
+    // Event listeners
+    whatsappBtn.addEventListener('click', openWhatsApp);
+    
+    generateQrBtn.addEventListener('click', () => {
+        if (!phoneInput.value.trim()) {
+            alert("📱 Please enter a phone number before generating QR.");
+            return;
+        }
+        generateVCardQR();
+    });
+    
+    openModalBtn.addEventListener('click', openModal);
+    cancelModalBtn.addEventListener('click', closeModal);
+    parseLensBtn.addEventListener('click', handleParseAndFill);
+    
+    // Close modal when clicking on overlay background
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    
+    // If user manually edits any field, clear existing QR (so old QR doesn't confuse)
+    const allFields = [nameInput, phoneInput, notesInput];
+    allFields.forEach(field => {
+        field.addEventListener('input', () => {
+            if (qrResultDiv.style.display === 'block') {
+                clearQR();
+            }
+        });
+    });
+    
+    // Optional: If phone field loses focus, we could trim non-digits but we keep raw for user flexibility
+    phoneInput.addEventListener('blur', () => {
+        let val = phoneInput.value.trim();
+        if (val && val !== "") {
+            // extract digits only to keep clean international format
+            const digits = val.replace(/\D/g, '');
+            if (digits.length > 0 && digits !== val) {
+                phoneInput.value = digits;
+            }
+        }
+    });
+    
+    // Small demo instructions on console but not needed
+    console.log("Ready: Paste from Lens (modal) using strict parser: single phone block only.");
+</script>
 </body>
 </html>
